@@ -6,7 +6,7 @@ import vutil
 
 exe = False
 def exe_cmd(cmd):
-    print(cmd)
+    vutil.pinfo(cmd)
     if (not exe):
         return
 
@@ -24,7 +24,7 @@ def load_config(conf_path):
         conf = json.load(conf_file)
     if (not "test" in conf or
         not "x264" in conf):
-        print("section test or x264 not in configure file")
+        vutil.perror("section test or x264 not in configure file")
         exit(1)
     return conf
 

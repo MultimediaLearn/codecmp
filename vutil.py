@@ -6,7 +6,6 @@ import shutil
 import glob
 import logging
 import random
-import chardet
 
 def pretty_args_str(args):
     args_str = ''
@@ -14,6 +13,15 @@ def pretty_args_str(args):
         args_str += '\n\t%s:\t[%s]' % (arg, repr(getattr(args, arg)))
 
     return args_str
+
+def perror(msg):
+    print("\033[1;31mERROR: %s\033[1;0m" % msg)
+
+def pwarning(msg):
+    print("\033[1;33mWARNING: %s\033[1;0m" % msg)
+
+def pinfo(msg):
+    print("\033[1;34mINFO: %s\033[1;0m" % msg)
 
 def init_logger(fn=None):
     from imp import reload
@@ -79,111 +87,6 @@ def move_file_noexcept(src, dst, force=True):
         logging.error(sys.exc_info()[1])
 
     return ret
-
-
-def multi_copy_files(src_file, dst_dir, up_times, _copy_suff='_copy_', force_copy=False):
-    if not 0 < up_times < 20:
-        return -1
-        logging.error('upsample time error, up_times=%d' % up_times)
-
-    _, fn, suf = sep_path_segs(src_file)
-    if not force_copy and fn.endswith(_copy_suff):
-        logging.warning('[%s] is already a copy, ignored' % src_file)
-        return 0
-
-    real_cpy_cnt = 0
-    for cnt in range(up_times):
-        if cnt == 0:
-            file_cnt = fn + suf
-        else:
-            # rand_num = random.randint(0, 1e4)
-            rand_num = cnt
-            file_cnt = fn + '_' + '{:04d}'.format(rand_num) + _copy_suff + suf
-
-        checked_file_cpy = os.path.join(dst_dir, file_cnt)
-        cpy_ret = copy_file_noexcept(src_file, checked_file_cpy, force=False)
-        if cpy_ret:
-            real_cpy_cnt += 1
-
-    return real_cpy_cnt
-
-
-img_suffixes = ['.jpg', '.jpeg', '.bmp', '.png']
-def get_files_recursively(dir_path, suffixes, level=1):
-    '''
-    递归读取目录下指定后缀的文件。
-    默认目录结构
-    d1 -\
-        |_x.img             # level 1
-        |_ ...
-        |_ d11 -\
-            |_x.img         # level 2
-            |_ ...
-            |_ d111 -\
-                |_x.img     # level 3
-                |_ ...
-    :param dir_path:
-    :param suffixes:
-    :param level:
-    :return:
-    '''
-    if len(suffixes) == 0:
-        raise ValueError('suffixes length is 0')
-
-    # level = 1: dir_path/*.jpg
-    # level = 3: dir_path/*/*/*.jpg
-    if level < 1 or level > 4:
-        raise ValueError('level must between [1, 3], but input=%d' % level)
-
-    files = []
-    for file_suffix in suffixes:
-        path_preffix = dir_path
-        for i in range(level):
-            path_preffix = os.path.join(path_preffix, '*')
-            # print(path_preffix)
-            files.extend(glob.glob(path_preffix + file_suffix))
-    
-    return files
-
-
-def find_files_recursively(file_name, dir_path, level=1):
-    '''
-    递归一个文件夹及其子文件夹，搜索指定文件
-    '''
-    # level = 1: dir_path/*.jpg
-    # level = 3: dir_path/*/*/*.jpg
-    if level < 1 or level > 4:
-        raise ValueError('level must between [1, 3], but input=%d' % level)
-
-    _, fn, suff = sep_path_segs(file_name)
-    file_name_raw = fn + suff
-
-    files = []
-    path_preffix = dir_path
-    for i in range(level):
-        # full file name, don't need to add * before it
-        files.extend(glob.glob(path_preffix + file_name_raw))
-
-        path_preffix = os.path.join(path_preffix, '*')
-        # print(path_preffix)
-    
-    return files
-
-
-def get_encd(f_path):
-    assert os.path.exists(f_path), 'file not exists[%s]' % f_path
-    assert os.path.isfile(f_path), 'not file[%s]' % f_path
-
-    with open(f_path, 'rb') as f:
-        data = f.read()
-        res = chardet.detect(data)
-
-    ret_enc = res['encoding'].lower()
-    if ret_enc == 'gb2312':
-        ret_enc = 'gbk'
-    logging.debug("[%s] encoding is [%s(%s)]" % (f_path, ret_enc, res['encoding']))
-
-    return ret_enc
 
 if __name__ == '__main__':
     # path = '../'
