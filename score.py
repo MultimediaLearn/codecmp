@@ -25,6 +25,7 @@ def load_config(conf_path):
     if (not "test" in conf or
         not "x264" in conf):
         print("section test or x264 not in configure file")
+        exit(1)
     return conf
 
 eval_cmd_patern = 'ffmpeg -i {main} -s:v {ref_dim} -i {ref} -filter_complex \
