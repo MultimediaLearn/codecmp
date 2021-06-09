@@ -82,5 +82,6 @@ if __name__ == "__main__":
                     "ssim": round(score["SSIM score"], 5),
                     "size": os.path.getsize(main_file)
                 }
+            print conf_x264["test_par"] + " " + val + "\t",
             print(scores[val])
 
