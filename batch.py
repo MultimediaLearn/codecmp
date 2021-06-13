@@ -13,8 +13,8 @@ def save_refs(writer, res):
         for par_key in bd_refs:
             bd = bd_refs[par_key]
             writer.writerow([
-                ref_key, par_key,
-                bd["psnr"], bd["ssim"], bd["vmaf"]
+                bd["psnr"], bd["ssim"], bd["vmaf"],
+                ref_key, par_key
                 ])
 
 if __name__ == "__main__":
