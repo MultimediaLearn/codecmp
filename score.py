@@ -43,11 +43,11 @@ def exe_cmd(cmd):
 def get_csv_name(val, kbps):
     return "res_" + val + "_"+ str(kbps) + "kpbs";
 
-def get_main_name(val, kbps):
-    return "main_" + val + "_"+ str(kbps) + "kpbs";
+def get_main_name(ref_name, val, kbps):
+    return "main_" + ref_name + "_" + val + "_"+ str(kbps) + "kpbs";
 
-def get_json_name(ref, main):
-    return ref + "_" + main;
+def get_json_name(main):
+    return main + "_score";
 
 def load_config(conf_path):
     pinfo("load config file [%s]" % conf_path)
@@ -65,9 +65,10 @@ def score_ref_calc(conf_enc, ref):
     ref_file = ref["file"]
     [_, ref_name, _] = sep_path_segs(ref_file)
 
+    # encode
     for val in conf_enc["test_value"]:
         for kbps in ref["bitrates"]:
-            main_file = res_dir + get_main_name(val, kbps) + ".264"
+            main_file = ref_dir + get_main_name(ref_name, val, kbps) + ".264"
             x264_cmd = enc_cmd_patern.format(
                     x264_bin=conf_enc["bin_path"],
                     comm_par=conf_enc["comm_par"],
@@ -81,6 +82,7 @@ def score_ref_calc(conf_enc, ref):
             res = exe_x264_cmd(x264_cmd)
             out_files[main_file] = res;
 
+    # calc psnr/vmaf/ssim score and save to json
     pdebug(out_files)
     for main_file in out_files:
         print(main_file)
@@ -89,7 +91,7 @@ def score_ref_calc(conf_enc, ref):
                     main = main_file,
                     ref = ref_file,
                     ref_dim=ref["dim"],
-                    log_path=log_dir + get_json_name(ref_name, main_name) + ".json"
+                    log_path=log_dir + get_json_name(main_name) + ".json"
                     )
         exe_cmd(cmd)
 
@@ -98,9 +100,9 @@ def score_ref_calc(conf_enc, ref):
         print(conf_enc["test_par"] + " " + val + ":")
         scores_tmp = {}
         for kbps in ref["bitrates"]:
-            main = get_main_name(val, kbps)
-            main_file = res_dir + main + ".264"
-            json_path = log_dir + get_json_name(ref_name, main) + ".json"
+            main_name = get_main_name(ref_name, val, kbps)
+            main_file = ref_dir + main_name + ".264"
+            json_path = log_dir + get_json_name(main_name) + ".json"
             with open(json_path, 'r') as score_f:
                 score = json.load(score_f)
                 scores_tmp[kbps] = {
@@ -128,7 +130,7 @@ def bdrate(ref_bitrate, ref_metric, main_bitrate, main_metric):
 # scores = {}, key1: test_value, key2: bitrates, value: vmaf/psnr/ssim
 # bdmetrics()
 def scores_calc(ref_name, val_ref, scores):
-    csv_file = res_dir + "res_" + ref_name + ".csv"
+    csv_file = log_dir + "ares_" + ref_name + ".csv"
     pinfo(csv_file)
     bd_ref = []
     bd_mains = {}
@@ -224,11 +226,11 @@ enc_cmd_patern = "{x264_bin} {in_par} {comm_par} --bitrate {bitrate} \
 
 out_dir = "out/"
 log_dir = out_dir + "log/"
-res_dir = out_dir + "res_ref/"
+ref_dir = out_dir + "res_ref/"
 cache_dir = out_dir + "cache/"
 make_dir(out_dir)
 make_dir(log_dir)
-make_dir(res_dir)
+make_dir(ref_dir)
 make_dir(cache_dir)
 
 if __name__ == "__main__":
