@@ -50,6 +50,10 @@ def init_logger(fn=None):
     logging.basicConfig(**logging_params)
     logging.debug('init basic configure of logging success')
 
+def open_csv(filename, mode='r'):
+    """Open a csv file in proper mode depending on Python verion."""
+    return(open(filename, mode=mode+'b') if bytes is str else
+           open(filename, mode=mode, newline=''))
 
 def make_dir(p, del_old=False):
     if os.path.exists(p):  # 文件夹存在
@@ -60,7 +64,6 @@ def make_dir(p, del_old=False):
             os.mkdir(p)  # 创建文件夹
         except FileNotFoundError:
             os.makedirs(p, exist_ok=True)
-
 
 def sep_path_segs(path):
     filepath, tempfilename= os.path.split(path)

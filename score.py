@@ -11,6 +11,7 @@ import numpy as np
 import bdmetric as bd
 
 from vutil import *
+from arguments import *
 
 # x264 conclusion demo:
 # encoded 100 frames, 18.98 fps, 770.82 kb/s
@@ -39,11 +40,6 @@ def exe_cmd(cmd):
     # output = subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)
     # print("out=[%s]" % output)
 
-def open_csv(filename, mode='r'):
-    """Open a csv file in proper mode depending on Python verion."""
-    return(open(filename, mode=mode+'b') if bytes is str else
-           open(filename, mode=mode, newline=''))
-
 def get_csv_name(val, kbps):
     return "res_" + val + "_"+ str(kbps) + "kpbs";
 
@@ -64,7 +60,7 @@ def load_config(conf_path):
     return conf
 
 # ref with different encode parameters: bitrate x test_value
-def score_ref(conf_enc, ref):
+def score_ref_calc(conf_enc, ref):
     out_files = {}
     ref_file = ref["file"]
     [_, ref_name, _] = sep_path_segs(ref_file)
@@ -83,10 +79,9 @@ def score_ref(conf_enc, ref):
                     out=main_file
                     )
             res = exe_x264_cmd(x264_cmd)
-            print(res)
             out_files[main_file] = res;
 
-    print(out_files)
+    pdebug(out_files)
     for main_file in out_files:
         print(main_file)
         [_, main_name, _] = sep_path_segs(main_file)
@@ -172,12 +167,14 @@ def scores_calc(ref_name, val_ref, scores):
 
     bd_ref_bitrates = bd_ref[0]
     bd_ref_metrics = bd_ref[1]
+    bdrates_ref = {}
     for key_main in bd_mains:
         print("---------[" + test_par + " " + str(val_ref) + "] VS [" +
                              test_par + " " + str(key_main) + "]------------")
         bd_in = bd_mains[key_main]
         kbitrates = bd_in[0]
         metrics = bd_in[1]
+        bds = {}
         for key in metrics:
             print("---------[" + str(key) + "]------------")
             metric = metrics[key]
@@ -185,15 +182,21 @@ def scores_calc(ref_name, val_ref, scores):
             pdebug(np.array(bd_ref_metrics[key]))
             pdebug(np.array(kbitrates))
             pdebug(np.array(metric))
-            pinfo(bdrate(bd_ref_bitrates, bd_ref_metrics[key],
-                   kbitrates, metric))
+            bd = bdrate(bd_ref_bitrates, bd_ref_metrics[key],
+                   kbitrates, metric)
+            pinfo(bd)
+            bds[key] = bd
+        bdrates_ref[test_par + ' ' + str(key_main)] = bds
 
-def eval(enc_json, refs_json, resume = False):
+    return bdrates_ref
+
+def eval(enc_json, refs_json, resume):
     conf_enc = load_config(enc_json)
     conf_enc = conf_enc["enc"]
     conf_refs = load_config(refs_json)
     conf_refs = conf_refs["refs"]
 
+    bdrates_all = {}
     for ref in conf_refs:
         ref_file = ref["file"]
         [_, ref_name, _] = sep_path_segs(ref_file)
@@ -202,13 +205,16 @@ def eval(enc_json, refs_json, resume = False):
             with open(scores_cache_path, "r") as f:
                 scores = pickle.load(f)
         else:
-            scores = score_ref(conf_enc, ref)
+            scores = score_ref_calc(conf_enc, ref)
             with open(scores_cache_path, "w") as f:
                 pickle.dump(scores, f)
 
         test_val_ref_ind = conf_enc["test_value_ref_ind"]
         test_val_ref = conf_enc["test_value"][test_val_ref_ind]
-        scores_calc(ref_name, test_val_ref, scores)
+        bdrates_ref = scores_calc(ref_name, test_val_ref, scores)
+        bdrates_all[ref_file] = bdrates_ref
+
+    return bdrates_all
 
 eval_cmd_patern = 'ffmpeg -i {main} -s:v {ref_dim} -i {ref} -filter_complex \
 [0:v][1:v]libvmaf=psnr=1:ssim=1:phone_model=0:log_path={log_path}:log_fmt=json \
@@ -218,21 +224,12 @@ enc_cmd_patern = "{x264_bin} {in_par} {comm_par} --bitrate {bitrate} \
 
 out_dir = "out/"
 log_dir = out_dir + "log/"
-res_dir = out_dir + "res/"
+res_dir = out_dir + "res_ref/"
 cache_dir = out_dir + "cache/"
 make_dir(out_dir)
 make_dir(log_dir)
 make_dir(res_dir)
 make_dir(cache_dir)
-
-parser = argparse.ArgumentParser(description='Produce BD score report')
-parser.add_argument('--enc', default="resources/enc_x264.json",
-        help='encoder configure json file')
-parser.add_argument('--refs', default="resources/games.json",
-        help='references configure json file')
-parser.add_argument('--resume', default=False, type=str2bool,
-        help='continue the score process')
-args = parser.parse_args()
 
 if __name__ == "__main__":
     print "Input arguments list:",
@@ -242,5 +239,5 @@ if __name__ == "__main__":
     else:
         pwarn("will rerun all process")
 
-    eval(args.enc, args.refs, args.resume)
+    print(eval(args.enc, args.refs, args.resume))
 
