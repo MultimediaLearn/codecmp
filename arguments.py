@@ -8,6 +8,8 @@ parser.add_argument('--refs', default="resources/games.json",
         help='references configure json file or directorie')
 parser.add_argument('--res', default="out/res/",
         help='final result save path')
+parser.add_argument('--id', default="",
+        help='id of this run')
 parser.add_argument('--resume', default=False, type=vutil.str2bool,
         help='continue the score process')
 

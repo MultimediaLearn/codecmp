@@ -3,5 +3,5 @@ run.sh
 bdmetric_res_all.csv
 cur/
 
-out/
+out_*/
 *.pyc

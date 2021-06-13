@@ -225,7 +225,7 @@ eval_cmd_patern = 'ffmpeg -i {main} -s:v {ref_dim} -i {ref} -filter_complex \
 enc_cmd_patern = "{x264_bin} {in_par} {comm_par} --bitrate {bitrate} \
 {test_par} {test_val} -o {out} {in_file}"
 
-out_dir = "out/"
+out_dir = "out_" + str(args.id) + "/"
 log_dir = out_dir + "log/"
 ref_dir = out_dir + "res_ref/"
 cache_dir = out_dir + "cache/"

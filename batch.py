@@ -3,6 +3,7 @@ import csv
 import glob
 
 import score
+
 from vutil import *
 from arguments import *
 
