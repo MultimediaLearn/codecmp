@@ -67,7 +67,7 @@ def score_ref_calc(conf_enc, ref):
 
     for val in conf_enc["test_value"]:
         for kbps in ref["bitrates"]:
-            main_file = out_dir + get_main_name(val, kbps) + ".264"
+            main_file = res_dir + get_main_name(val, kbps) + ".264"
             x264_cmd = enc_cmd_patern.format(
                     x264_bin=conf_enc["bin_path"],
                     comm_par=conf_enc["comm_par"],
@@ -99,7 +99,7 @@ def score_ref_calc(conf_enc, ref):
         scores_tmp = {}
         for kbps in ref["bitrates"]:
             main = get_main_name(val, kbps)
-            main_file = out_dir + main + ".264"
+            main_file = res_dir + main + ".264"
             json_path = log_dir + get_json_name(ref_name, main) + ".json"
             with open(json_path, 'r') as score_f:
                 score = json.load(score_f)
@@ -128,7 +128,7 @@ def bdrate(ref_bitrate, ref_metric, main_bitrate, main_metric):
 # scores = {}, key1: test_value, key2: bitrates, value: vmaf/psnr/ssim
 # bdmetrics()
 def scores_calc(ref_name, val_ref, scores):
-    csv_file = res_dir + ref_name + "_res.csv"
+    csv_file = res_dir + "res_" + ref_name + ".csv"
     pinfo(csv_file)
     bd_ref = []
     bd_mains = {}
