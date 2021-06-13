@@ -1,0 +1,10 @@
+{
+    "type": "refs",
+    "refs": [
+        {
+            "file": "resources/lol_160x120.yuv",
+            "dim": "160x120",
+            "bitrates": [400, 300, 200, 100]
+        }
+    ]
+}

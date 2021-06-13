@@ -7,21 +7,33 @@ import glob
 import logging
 import random
 
-def pretty_args_str(args):
+def pretty_args(args, tabs=''):
     args_str = ''
     for arg in vars(args):
-        args_str += '\n\t%s:\t[%s]' % (arg, repr(getattr(args, arg)))
-
+        args_str += '\n' + tabs + '%s:\t[%s]' % (arg, repr(getattr(args, arg)))
     return args_str
 
 def perror(msg):
     print("\033[1;31mERROR: %s\033[1;0m" % msg)
 
-def pwarning(msg):
+def pwarn(msg):
     print("\033[1;33mWARNING: %s\033[1;0m" % msg)
 
 def pinfo(msg):
     print("\033[1;34mINFO: %s\033[1;0m" % msg)
+
+def pdebug(msg):
+    print(msg)
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def init_logger(fn=None):
     from imp import reload

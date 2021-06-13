@@ -1,0 +1,10 @@
+{
+    "type":"encoder",
+    "enc": {
+        "bin_path": "x264",
+        "comm_par": "--qp 24 --ref 2 --bframes 3",
+        "test_par": "--b-pyramid",
+        "test_value": ["none", "strict"],
+        "test_value_ref_ind": 0
+    }
+}
