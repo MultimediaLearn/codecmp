@@ -60,6 +60,7 @@ def load_config(conf_path):
     return conf
 
 # ref with different encode parameters: bitrate x test_value
+# TODO(vacing): split loop by json generation to support resume
 def score_ref_calc(conf_enc, ref):
     out_files = {}
     ref_file = ref["file"]
@@ -112,9 +113,9 @@ def score_ref_calc(conf_enc, ref):
                         "test": val,
                         "target": kbps,
                         "bitrate": out_files[main_file]["bitrate"],
-                        "vmaf": round(score["VMAF score"], 5),
-                        "psnr": round(score["PSNR score"], 5),
-                        "ssim": round(score["SSIM score"], 5),
+                        "vmaf": score["VMAF score"],
+                        "psnr": score["PSNR score"],
+                        "ssim": score["SSIM score"],
                         "size": os.path.getsize(main_file)
                     }
             print "bitrate:" + str(kbps) + "\t",
