@@ -156,8 +156,9 @@ def scores_calc(ref_name, val_ref, scores):
                     test_par = score["test_par"]
                 writer = csv.writer(f, delimiter=",")
                 writer.writerow([
-                    score["test"], score["target"], score["bitrate"],
-                    score["psnr"], score["ssim"], score["vmaf"]
+                    score["target"], score["bitrate"],
+                    score["psnr"], score["ssim"], score["vmaf"],
+                    score["test_par"] + " " + score["test"]
                     ])
                 kbitrates.append(score["bitrate"])
                 metrics["psnr"].append(score["psnr"])
