@@ -59,11 +59,9 @@ def make_dir(p, del_old=False):
     if os.path.exists(p):  # 文件夹存在
         if del_old:
             shutil.rmtree(p)        # 删除旧文件夹
-    else:
-        try:
-            os.mkdir(p)  # 创建文件夹
-        except FileNotFoundError:
-            os.makedirs(p, exist_ok=True)
+
+    if not os.path.exists(p):
+        os.makedirs(p)  # 创建文件夹
 
 def sep_path_segs(path):
     filepath, tempfilename= os.path.split(path)

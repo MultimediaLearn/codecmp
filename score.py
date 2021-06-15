@@ -40,11 +40,11 @@ def exe_cmd(cmd):
     # output = subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)
     # print("out=[%s]" % output)
 
-def get_csv_name(val, kbps):
-    return "res_" + val + "_"+ str(kbps) + "kpbs";
+def get_csv_name(ref):
+    return "ares_" + ref + "_"+ uid;
 
 def get_main_name(ref_name, val, kbps):
-    return "main_" + ref_name + "_" + val + "_"+ str(kbps) + "kpbs";
+    return "main_" + ref_name + "_" + val + "_"+ str(kbps) + "kpbs_" + uid;
 
 def get_json_name(main):
     return main + "_score";
@@ -131,7 +131,7 @@ def bdrate(ref_bitrate, ref_metric, main_bitrate, main_metric):
 # scores = {}, key1: test_value, key2: bitrates, value: vmaf/psnr/ssim
 # bdmetrics()
 def scores_calc(ref_name, val_ref, scores):
-    csv_file = log_dir + "ares_" + ref_name + ".csv"
+    csv_file = log_dir + get_csv_name(ref_name) + ".csv"
     pinfo(csv_file)
     bd_ref = []
     bd_mains = {}
@@ -226,7 +226,8 @@ eval_cmd_patern = 'ffmpeg -i {main} -s:v {ref_dim} -i {ref} -filter_complex \
 enc_cmd_patern = "{x264_bin} {in_par} {comm_par} --bitrate {bitrate} \
 {test_par} {test_val} -o {out} {in_file}"
 
-out_dir = "out_" + str(args.id) + "/"
+uid = args.id
+out_dir = "out_" + str(uid) + "/"
 log_dir = out_dir + "log/"
 ref_dir = out_dir + "res_ref/"
 cache_dir = out_dir + "cache/"

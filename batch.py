@@ -25,15 +25,18 @@ if __name__ == "__main__":
     enc = args.enc
     refs = args.refs
     resume = args.resume
+    uid = args.id
     res_path = args.res
     res_path_open_mode = "w"
-    if os.path.isdir(res_path):
-        make_dir(res_path)
-    else:
+
+    # create path directory
+    [csv_path, _, _] = sep_path_segs(res_path)
+    if (csv_path):
+        print csv_path
+        make_dir(csv_path)
+
+    if os.path.isfile(res_path):
         res_path_open_mode = "a"
-        [csv_path, _, _] = sep_path_segs(res_path)
-        if (csv_path):
-            make_dir(csv_path)
         # create first, or isfile() check would be fail
         with open_csv(res_path, "w") as f:
             pass
@@ -44,7 +47,7 @@ if __name__ == "__main__":
             csv_file = res_path
         else:
             [_, ref_conf_name, _] = sep_path_segs(refs)
-            csv_file = res_path + "bdmetrics_" + ref_conf_name + ".csv"
+            csv_file = res_path + "bdmetrics_" + ref_conf_name + "_" + str(uid) + ".csv"
         pinfo(csv_file)
         with open_csv(csv_file, "w") as f:
             writer = csv.writer(f, delimiter=",")
