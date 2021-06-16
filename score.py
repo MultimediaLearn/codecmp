@@ -131,8 +131,10 @@ def scores_calc(ref_name, val_ref, scores):
                     test_par = score["test_par"]
                 writer = csv.writer(f, delimiter=",")
                 writer.writerow([
-                    score["target"], score["bitrate"], score["size"],
-                    score["psnr"], score["ssim"], score["vmaf"],
+                    score["target"], round(score["bitrate"], 2), score["size"],
+                    round(score["psnr"], 5),
+                    round(score["ssim"], 5),
+                    round(score["vmaf"], 5),
                     score["test_par"] + " " + score["test"]
                     ])
                 kbitrates.append(score["bitrate"])

@@ -35,7 +35,10 @@ if __name__ == "__main__":
         print csv_path
         make_dir(csv_path)
 
-    if os.path.isfile(res_path):
+    if not os.path.exists(res_path) or os.path.isfile(res_path):
+        # if is path, has been created, not exists
+        # if exists, check is file (may existed file)
+        # so, is file, recreate it
         res_path_open_mode = "a"
         # create first, or isfile() check would be fail
         with open_csv(res_path, "w") as f:
