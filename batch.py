@@ -4,7 +4,7 @@ import glob
 
 import score
 
-from vutil import *
+from util.vutil import *
 from arguments import *
 
 def save_refs(writer, res):

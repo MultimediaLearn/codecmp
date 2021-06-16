@@ -7,12 +7,12 @@ import argparse
 import pickle
 import numpy as np
 
-import bdmetric as bd
-import ffmpeg as ff
-import x264
-import openh264
+import util.bdmetric as bd
+import util.ffmpeg as ff
+import util.x264 as x264
+import util.openh264 as openh264
 
-from vutil import *
+from util.vutil import *
 from arguments import *
 
 def get_csv_name(ref):
