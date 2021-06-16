@@ -76,7 +76,7 @@ def score_ref_calc(conf_enc, ref):
                     out_files[main_file]["bitrate"]):
                     bitrate = out_files[main_file]["bitrate"]
                 else:
-                    bitrate = filesize * 1.0 / 1000 / frames * ref["fps"]
+                    bitrate = filesize * 8.0 / 1000 / frames * ref["fps"]
                     pwarn("estimated bitrate=%f" % bitrate)
 
                 # TODO(vacing): unify bitrate caculation
