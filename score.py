@@ -1,6 +1,5 @@
 #encoding=utf-8
 import json
-import os
 import subprocess
 import re
 import csv
@@ -9,36 +8,12 @@ import pickle
 import numpy as np
 
 import bdmetric as bd
+import ffmpeg as ff
+import x264
+import openh264
 
 from vutil import *
 from arguments import *
-
-# x264 conclusion demo:
-# encoded 100 frames, 18.98 fps, 770.82 kb/s
-x264_res = re.compile('encoded (?P<frames>\d+) frames, (?P<fps>[\d.]+) fps, (?P<kbps>[\d.]+) kb/s')
-def x264_log_process(msg):
-    lines = msg.split('\n')
-    res = lines[-2]
-    x264_match = x264_res.match(res)
-    score_dict = x264_match.groupdict()
-    ret = { "total_frames": int(score_dict["frames"]),
-            "process_fps" : float(score_dict["fps"]),
-            "bitrate" : float(score_dict["kbps"]),
-          }
-    return ret
-
-def exe_x264_cmd(cmd):
-    pinfo(cmd)
-    output = subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)
-    print("out=[\n%s]" % output)
-    return x264_log_process(output)
-
-def exe_cmd(cmd):
-    pinfo(cmd)
-    process = os.popen(cmd)
-    output = process.read()
-    # output = subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)
-    # print("out=[%s]" % output)
 
 def get_csv_name(ref):
     return "ares_" + ref + "_"+ uid;
@@ -55,7 +30,7 @@ def load_config(conf_path):
         conf = json.load(conf_file)
     if (not "type" in conf or
         not conf["type"] in ["encoder", "refs"]):
-        perror("section type not in configure file or type is wrong[type=%s]" % conf["type"])
+        perror("section type not in configure file or type is wrong[type=%s]" % conf_path)
         exit(1)
     return conf
 
@@ -70,31 +45,19 @@ def score_ref_calc(conf_enc, ref):
     for val in conf_enc["test_value"]:
         for kbps in ref["bitrates"]:
             main_file = ref_dir + get_main_name(ref_name, val, kbps) + ".264"
-            x264_cmd = enc_cmd_patern.format(
-                    x264_bin=conf_enc["bin_path"],
-                    comm_par=conf_enc["comm_par"],
-                    test_par=conf_enc["test_par"],
-                    in_file=ref["file"],
-                    in_par="--input-res " + ref["dim"],
-                    bitrate=str(kbps),
-                    test_val=val,
-                    out=main_file
-                    )
-            res = exe_x264_cmd(x264_cmd)
+            if (conf_enc["class"] == "x264"):
+                res = x264.run_eval(conf_enc, ref, kbps, val, main_file)
+            elif (conf_enc["class"] == "openh264"):
+                res = openh264.run_eval(conf_enc, ref, kbps, val, main_file)
             out_files[main_file] = res;
 
     # calc psnr/vmaf/ssim score and save to json
     pdebug(out_files)
     for main_file in out_files:
-        print(main_file)
         [_, main_name, _] = sep_path_segs(main_file)
-        cmd = eval_cmd_patern.format(
-                    main = main_file,
-                    ref = ref_file,
-                    ref_dim=ref["dim"],
-                    log_path=log_dir + get_json_name(main_name) + ".json"
-                    )
-        exe_cmd(cmd)
+        log_path=log_dir + get_json_name(main_name) + ".json"
+        dim = str(ref["dim_w"]) + "x" + str(ref["dim_h"])
+        ff.run_eval(main_file, ref_file, dim, log_path)
 
     scores = {}     # key1: test_value, key2: bitrates, value: vmaf/psnr/ssim
     for val in conf_enc["test_value"]:
@@ -106,17 +69,28 @@ def score_ref_calc(conf_enc, ref):
             json_path = log_dir + get_json_name(main_name) + ".json"
             with open(json_path, 'r') as score_f:
                 score = json.load(score_f)
+                filesize = os.path.getsize(main_file)
+                frames = out_files[main_file]["total_frames"]
+                bitrate = 0
+                if ("bitrate" in out_files[main_file] and
+                    out_files[main_file]["bitrate"]):
+                    bitrate = out_files[main_file]["bitrate"]
+                else:
+                    bitrate = filesize / frames * ref["fps"]
+                    pwarn("estimated bitrate=%f" % bitrate)
+
                 scores_tmp[kbps] = {
                         "ref": ref_file,
                         "main": main_file,
                         "test_par": conf_enc["test_par"],
                         "test": val,
                         "target": kbps,
-                        "bitrate": out_files[main_file]["bitrate"],
+                        "bitrate": bitrate,
+                        "frames": frames,
                         "vmaf": score["VMAF score"],
                         "psnr": score["PSNR score"],
                         "ssim": score["SSIM score"],
-                        "size": os.path.getsize(main_file)
+                        "size": filesize
                     }
             print "bitrate:" + str(kbps) + "\t",
             print(scores_tmp)
@@ -219,12 +193,6 @@ def eval(enc_json, refs_json, resume):
         bdrates_all[ref_file] = bdrates_ref
 
     return bdrates_all
-
-eval_cmd_patern = 'ffmpeg -i {main} -s:v {ref_dim} -i {ref} -filter_complex \
-[0:v][1:v]libvmaf=psnr=1:ssim=1:phone_model=0:log_path={log_path}:log_fmt=json \
--f null -'
-enc_cmd_patern = "{x264_bin} {in_par} {comm_par} --bitrate {bitrate} \
-{test_par} {test_val} -o {out} {in_file}"
 
 uid = args.id
 out_dir = "out_" + str(uid) + "/"

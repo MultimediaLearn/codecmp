@@ -6,6 +6,7 @@ import shutil
 import glob
 import logging
 import random
+import subprocess
 
 def pretty_args(args, tabs=''):
     args_str = ''
@@ -49,6 +50,19 @@ def init_logger(fn=None):
 
     logging.basicConfig(**logging_params)
     logging.debug('init basic configure of logging success')
+
+def exe_enc_cmd(cmd, log_process):
+    pinfo(cmd)
+    output = subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)
+    pdebug("out=[\n%s]" % output)
+    return log_process(output)
+
+def exe_cmd(cmd):
+    pinfo(cmd)
+    process = os.popen(cmd)
+    output = process.read()
+    # output = subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)
+    # print("out=[%s]" % output)
 
 def open_csv(filename, mode='r'):
     """Open a csv file in proper mode depending on Python verion."""

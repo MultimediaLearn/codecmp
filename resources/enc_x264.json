@@ -1,6 +1,7 @@
 {
     "type":"encoder",
     "enc": {
+        "class":"x264",
         "bin_path": "x264",
         "comm_par": "--qp 24 --ref 2 --bframes 3",
         "test_par": "--b-pyramid",
