@@ -2,6 +2,7 @@
 run.sh
 bdmetric_res_all.csv
 cur/
+test/
 
 out_*/
 *.pyc

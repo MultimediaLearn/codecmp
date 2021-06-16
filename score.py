@@ -76,16 +76,17 @@ def score_ref_calc(conf_enc, ref):
                     out_files[main_file]["bitrate"]):
                     bitrate = out_files[main_file]["bitrate"]
                 else:
-                    bitrate = filesize / frames * ref["fps"]
+                    bitrate = filesize * 1.0 / 1000 / frames * ref["fps"]
                     pwarn("estimated bitrate=%f" % bitrate)
 
+                # TODO(vacing): unify bitrate caculation
                 scores_tmp[kbps] = {
                         "ref": ref_file,
                         "main": main_file,
                         "test_par": conf_enc["test_par"],
                         "test": val,
                         "target": kbps,
-                        "bitrate": bitrate,
+                        "bitrate": bitrate, # kbps
                         "frames": frames,
                         "vmaf": score["VMAF score"],
                         "psnr": score["PSNR score"],
@@ -130,7 +131,7 @@ def scores_calc(ref_name, val_ref, scores):
                     test_par = score["test_par"]
                 writer = csv.writer(f, delimiter=",")
                 writer.writerow([
-                    score["target"], score["bitrate"],
+                    score["target"], score["bitrate"], score["size"],
                     score["psnr"], score["ssim"], score["vmaf"],
                     score["test_par"] + " " + score["test"]
                     ])

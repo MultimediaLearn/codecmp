@@ -20,8 +20,12 @@ def _log_process(msg):
           }
     return ret
 
-_cmd_pattern = "{enc_bin} -org {in_file} {comm_par} -sw {sw} -sh {sh} -frin {in_fps}\
-        -dw 0 {d0w} -dh 0 {d0h} -ltarb 0 {bitrate} -frout 0 {out0_fps}  -bf {out} -trace 1"
+# -rc 0 must set
+_cmd_pattern = "{enc_bin} -org {in_file} {comm_par} {test_par} {test_val} \
+-sw {sw} -sh {sh} -frin {in_fps} \
+-dw 0 {d0w} -dh 0 {d0h} -frout 0 {out0_fps} \
+-ltarb 0 {bitrate}k -lmaxb 0 {bitrate}k -tarb {bitrate}k \
+-bf {out} -trace 1"
 def run_eval(conf_enc, ref, kbps, val, main_file):
     cmd = _cmd_pattern.format(
             enc_bin=conf_enc["bin_path"],
