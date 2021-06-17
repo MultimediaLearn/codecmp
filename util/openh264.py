@@ -7,7 +7,7 @@ from vutil import *
 # Frames:         100
 # encode time:    0.029496 sec
 # FPS:            3390.290209 fps
-re_res = re.compile('.*Frames:\s+(?P<frames>\d+);encode time:\s+(?P<fps>[\d.]+) sec.*')
+re_res = re.compile('.*Frames:\s+(?P<frames>\d+);encode time:\s+(?P<fps>[\d.]+) sec;FPS:.*')
 def _log_process(msg):
     lines = msg.split('\n')
     msg = ";".join(lines)
@@ -25,7 +25,7 @@ _cmd_pattern = "{enc_bin} -org {in_file} {comm_par} {test_par} {test_val} \
 -sw {sw} -sh {sh} -frin {in_fps} \
 -dw 0 {d0w} -dh 0 {d0h} -frout 0 {out0_fps} \
 -ltarb 0 {bitrate}k -lmaxb 0 {bitrate}k -tarb {bitrate}k \
--bf {out} -trace 1"
+-bf {out} -trace 3" # open warning log
 def run_eval(conf_enc, ref, kbps, val, main_file):
     cmd = _cmd_pattern.format(
             enc_bin=conf_enc["bin_path"],
