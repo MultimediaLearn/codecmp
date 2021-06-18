@@ -113,6 +113,9 @@ def scores_calc(ref_name, val_ref, scores):
     test_par = str()
 
     with open_csv(csv_file, "w") as f:
+        writer = csv.writer(f, delimiter=",")
+        writer.writerow(["target_kbps", "real_kbps", "bps_error", "file_size",
+                         "psnr", "ssim", "vmaf", "parameter"])
         for test_val in scores:
             bd_in = []
             if test_val == val_ref:
@@ -129,9 +132,11 @@ def scores_calc(ref_name, val_ref, scores):
                 score = scores_test[kbps]
                 if not test_par:
                     test_par = score["test_par"]
-                writer = csv.writer(f, delimiter=",")
                 writer.writerow([
-                    score["target"], round(score["bitrate"], 2), score["size"],
+                    score["target"],
+                    round(score["bitrate"], 2),
+                    round((score["bitrate"] / score["target"] - 1) * 100, 2),
+                    score["size"],
                     round(score["psnr"], 5),
                     round(score["ssim"], 5),
                     round(score["vmaf"], 5),
