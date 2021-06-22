@@ -72,6 +72,7 @@ int main(int argc, char *argv[]) {
     uint8_t ref_idc = -1;
     uint8_t nal_type = 0;
     uint64_t size_level_0 = 0, size_level_1 = 0, size_level_2 = 0, size_level_3 = 0;
+    uint64_t num_level_0 = 0, num_level_1 = 0, num_level_2 = 0, num_level_3 = 0;
     while (true) {
         if (iBufPos >= iFileSize)
             break;
@@ -104,15 +105,19 @@ int main(int argc, char *argv[]) {
         switch (ref_idc) {
         case 3:
             size_level_0 += (i + len_prefix);
+            num_level_0 ++;
             break;
         case 2:
             size_level_1 += (i + len_prefix);
+            num_level_1 ++;
             break;
         case 1:
             size_level_2 += (i + len_prefix);
+            num_level_2 ++;
             break;
         case 0:
             size_level_3 += (i + len_prefix);
+            num_level_3 ++;
             break;
         default:
             break;
@@ -129,14 +134,15 @@ int main(int argc, char *argv[]) {
     }
 
     float total_size = size_level_0 + size_level_1 + size_level_2 + size_level_3;
-    fprintf(stderr, "\033[32;1m"
-                    "level 0: %lu(%.0f%) bytes \t level 1: %lu(%.0f%) bytes \t "
-                    "level 2: %lu(%.0f%) bytes \t level 3: %lu(%.0f%) bytes\n"
+    fprintf(stderr, "\033[32;1mtotal: %.0f(%d)\n"
+                    "level 0: %lu(%.0f%, %d) bytes \t level 1: %lu(%.0f%, %d) bytes \t "
+                    "level 2: %lu(%.0f%, %d) bytes \t level 3: %lu(%.0f%, %d) bytes\n"
                     "\033[0m",
-                    size_level_0, size_level_0 / total_size * 100,
-                    size_level_1, size_level_1 / total_size * 100,
-                    size_level_2, size_level_2 / total_size * 100,
-                    size_level_3, size_level_3 / total_size * 100);
+                    total_size, slice_ind,
+                    size_level_0, size_level_0 / total_size * 100, num_level_0,
+                    size_level_1, size_level_1 / total_size * 100, num_level_1,
+                    size_level_2, size_level_2 / total_size * 100, num_level_2,
+                    size_level_3, size_level_3 / total_size * 100, num_level_3);
 
     if (sdfd) fclose(sdfd);
 
