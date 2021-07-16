@@ -18,8 +18,9 @@ from arguments import *
 def get_csv_name(ref):
     return "ares_" + ref + "_"+ uid;
 
-def get_main_name(ref_name, val, kbps):
-    return "main_" + ref_name + "_" + val + "_"+ str(kbps) + "kpbs_" + uid;
+def get_main_name(ref_name, val, rc):
+    rc_str = rc.replace(" ", "_").replace("-", "")
+    return "main_" + ref_name + "_" + val + "_"+ rc_str + "_" + uid;
 
 def get_json_name(main):
     return main + "_score";
@@ -34,7 +35,7 @@ def load_config(conf_path):
         exit(1)
     return conf
 
-# ref with different encode parameters: bitrate x test_value
+# ref with different encode parameters: rc x test_value
 # TODO(vacing): split loop by json generation to support resume
 def score_ref_calc(conf_enc, ref):
     out_files = {}
@@ -43,12 +44,15 @@ def score_ref_calc(conf_enc, ref):
 
     # encode
     for val in conf_enc["test_value"]:
-        for kbps in ref["bitrates"]:
-            main_file = ref_dir + get_main_name(ref_name, val, kbps) + ".264"
+        for rc in conf_enc["rcs"]:
+            main_file = ref_dir + get_main_name(ref_name, val, rc) + ".264"
             if (conf_enc["class"] == "x264"):
-                res = x264.run_eval(conf_enc, ref, kbps, val, main_file)
+                res = x264.run_eval(conf_enc, ref, rc, val, main_file)
             elif (conf_enc["class"] == "openh264"):
-                res = openh264.run_eval(conf_enc, ref, kbps, val, main_file)
+                res = openh264.run_eval(conf_enc, ref, rc, val, main_file)
+            else:
+                perror("unkonwn encoder " + conf_enc["class"])
+                exit(-1)
             out_files[main_file] = res;
 
     # calc psnr/vmaf/ssim score and save to json
@@ -59,12 +63,12 @@ def score_ref_calc(conf_enc, ref):
         dim = str(ref["dim_w"]) + "x" + str(ref["dim_h"])
         ff.run_eval(main_file, ref_file, dim, log_path)
 
-    scores = {}     # key1: test_value, key2: bitrates, value: vmaf/psnr/ssim
+    scores = {}     # key1: test_value, key2: rc, value: vmaf/psnr/ssim
     for val in conf_enc["test_value"]:
         print(conf_enc["test_par"] + " " + val + ":")
         scores_tmp = {}
-        for kbps in ref["bitrates"]:
-            main_name = get_main_name(ref_name, val, kbps)
+        for rc in conf_enc["rcs"]:
+            main_name = get_main_name(ref_name, val, rc)
             main_file = ref_dir + main_name + ".264"
             json_path = log_dir + get_json_name(main_name) + ".json"
             with open(json_path, 'r') as score_f:
@@ -80,20 +84,20 @@ def score_ref_calc(conf_enc, ref):
                     pwarn("estimated bitrate=%f" % bitrate)
 
                 # TODO(vacing): unify bitrate caculation
-                scores_tmp[kbps] = {
+                scores_tmp[rc] = {
                         "ref": ref_file,
                         "main": main_file,
                         "test_par": conf_enc["test_par"],
                         "test": val,
-                        "target": kbps,
-                        "bitrate": bitrate, # kbps
+                        "rc": rc,
+                        "rbitrate": bitrate, # kbps
                         "frames": frames,
                         "vmaf": score["VMAF score"],
                         "psnr": score["PSNR score"],
                         "ssim": score["SSIM score"],
                         "size": filesize
                     }
-            print "bitrate:" + str(kbps) + "\t",
+            print "rc:" + rc + "\t",
             print(scores_tmp)
         scores[val] = scores_tmp
 
@@ -133,16 +137,15 @@ def scores_calc(ref_name, val_ref, scores):
                 if not test_par:
                     test_par = score["test_par"]
                 writer.writerow([
-                    score["target"],
-                    round(score["bitrate"], 2),
-                    round((score["bitrate"] / score["target"] - 1) * 100, 2),
+                    score["rc"],
+                    round(score["rbitrate"], 2),
                     score["size"],
                     round(score["psnr"], 5),
                     round(score["ssim"], 5),
                     round(score["vmaf"], 5),
                     score["test_par"] + " " + score["test"]
                     ])
-                kbitrates.append(score["bitrate"])
+                kbitrates.append(score["rbitrate"])
                 metrics["psnr"].append(score["psnr"])
                 metrics["ssim"].append(score["ssim"])
                 metrics["vmaf"].append(score["vmaf"])

@@ -4,6 +4,12 @@
         "class":"x264",
         "bin_path": "x264",
         "comm_par": "--qp 24 --ref 2 --bframes 3",
+        "rcs":[
+               "--crf 30 --vbv-maxrate 100 --vbv-bufsize 100",
+               "--crf 25 --vbv-maxrate 200 --vbv-bufsize 200",
+               "--crf 20 --vbv-maxrate 300 --vbv-bufsize 300",
+               "--crf 16 --vbv-maxrate 400 --vbv-bufsize 400"
+        ],
         "test_par": "--b-pyramid",
         "test_value": ["none", "strict"],
         "test_value_ref_ind": 0

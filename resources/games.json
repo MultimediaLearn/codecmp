@@ -5,8 +5,7 @@
             "file": "resources/lol_160x120.yuv",
             "dim_w": 160,
             "dim_h": 120,
-            "fps": 25,
-            "bitrates": [400, 300, 200, 100]
+            "fps": 25
         }
     ]
 }

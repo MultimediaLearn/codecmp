@@ -16,9 +16,9 @@ def _log_process(msg):
           }
     return ret
 
-_cmd_pattern = "{enc_bin} {in_par} {comm_par} --bitrate {bitrate}  -r {fps}\
-    {test_par} {test_val} -o {out} {in_file}"
-def run_eval(conf_enc, ref, kbps, val, main_file):
+_cmd_pattern = "{enc_bin} {in_par} {comm_par} {rc} -r {fps} \
+{test_par} {test_val} -o {out} {in_file}"
+def run_eval(conf_enc, ref, rc, val, main_file):
     x264_cmd = _cmd_pattern.format(
             enc_bin=conf_enc["bin_path"],
             comm_par=conf_enc["comm_par"],
@@ -26,7 +26,7 @@ def run_eval(conf_enc, ref, kbps, val, main_file):
             test_val=val,
             in_file=ref["file"],
             in_par="--input-res " + str(ref["dim_w"]) + "x" + str(ref["dim_h"]),
-            bitrate=str(kbps),
+            rc=rc,
             fps=ref["fps"],
             out=main_file
             )
