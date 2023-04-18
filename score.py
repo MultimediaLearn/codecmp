@@ -6,6 +6,7 @@ import csv
 import argparse
 import pickle
 import numpy as np
+from openpyxl import Workbook
 
 import util.bdmetric as bd
 import util.ffmpeg as ff
@@ -113,7 +114,7 @@ def enc_score_calc(conf_enc, ref):
     print(scores)
     return scores
 
-def eval(enc_json, refs_json, resume):
+def eval(enc_json, refs_json, resume, wb: Workbook):
     ref_yuvs = load_config(refs_json)  # 加载编码参考YUV文件信息
     ref_yuvs = ref_yuvs["refs"]
 
@@ -162,7 +163,7 @@ def eval(enc_json, refs_json, resume):
         if bd_ref_ind is not None:
             test_val_ref = bd_ref_enc["test_value"][bd_ref_ind]
         # 计算bdrate
-        bdrates_ref = scores_calc(csv_file, ref_name, bd_ref_name, test_val_ref, enc_scores)
+        bdrates_ref = scores_calc(csv_file, yuv_file, bd_ref_name, test_val_ref, enc_scores, wb)
         bdrates_all[yuv_file] = bdrates_ref
 
     return bdrates_all
@@ -184,6 +185,7 @@ make_dir(cache_dir)
 # Output:
 #  - 每个参数取值的bdrate 曲线(3条：psnr, ssim, vmaf)(由多个码点计算得到)
 if __name__ == "__main__":
+    wb = Workbook()
     print("Input arguments list:")
     print(pretty_args(args, tabs="  "))
     if args.resume:
@@ -191,5 +193,5 @@ if __name__ == "__main__":
     else:
         pwarn("will rerun all process")
 
-    print(eval(args.enc, args.refs, args.resume))
+    print(eval(args.enc, args.refs, args.resume, wb))
 

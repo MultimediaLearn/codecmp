@@ -1,6 +1,8 @@
 #encoding=utf-8
+import os
 import csv
 import numpy as np
+from openpyxl import Workbook
 
 from .bdmetric import BD_RATE
 from .vutil import *
@@ -11,16 +13,22 @@ def bdrate(ref_bitrate, ref_metric, main_bitrate, main_metric):
 
 # scores = {}, key1: test_value, key2: bitrates, value: vmaf/psnr/ssim
 # bdmetrics()
-def scores_calc(csv_file, ref_name, bd_ref_name, val_ref, scores):
+def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
     val_ref_key = ""
     bd_ref = []         # bdrate 计算参考数据，[(码率，[psnrs, ssims, vmafs]), ...]
     bd_mains = {}       # {"enc_name": {"test_val": bd_in}}
+    ws = wb.get_sheet_by_name("Sheet")
+    _, yuv_file = os.path.split(yuv_file)
 
     # 汇总原始码率和 psnr/vmaf/ssim 信息
     with open_csv(csv_file, "w") as f:
         writer = csv.writer(f, delimiter=",")
-        writer.writerow(["enc_name", "kbps", "real_kbps", "bps_error", "file_size",
-                         "psnr", "ssim", "vmaf", "parameter"])
+        head = ["yuv_name", "enc_name", "kbps", "real_kbps", "bps_error",
+                "psnr", "ssim", "vmaf", "parameter"]
+        writer.writerow(head)
+        if ws.dimensions == "A1:A1":
+            ws.append(head)
+
         for enc_name in scores:
             if enc_name in ["_ref_"]:
                 continue
@@ -36,17 +44,21 @@ def scores_calc(csv_file, ref_name, bd_ref_name, val_ref, scores):
                 metrics["vmaf"] = []
                 for kbps in target_sorted:
                     score = scores_test[kbps]
-                    writer.writerow([
+                    bps_error = (score["bitrate"] - score["rbitrate"]) / score["bitrate"] * 100
+                    content = [
+                        yuv_file,
                         enc_name,
                         round(score["bitrate"], 2),
                         round(score["rbitrate"], 2),
-                        round((score["bitrate"] - score["rbitrate"]) / score["bitrate"], 2),
-                        score["size"],
+                        round(bps_error, 2),
                         round(score["psnr"], 5),
                         round(score["ssim"], 5),
                         round(score["vmaf"], 5),
                         score["test_par"] + " " + score["test_val"]
-                        ])
+                        ]
+                    # yuv_file = ""   # 清空 yuv_file
+                    writer.writerow(content)
+                    ws.append(content)
                     kbitrates.append(score["rbitrate"])
                     metrics["psnr"].append(score["psnr"])
                     metrics["ssim"].append(score["ssim"])
