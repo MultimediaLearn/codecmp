@@ -17,7 +17,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
     val_ref_key = ""
     bd_ref = []         # bdrate 计算参考数据，[(码率，[psnrs, ssims, vmafs]), ...]
     bd_mains = {}       # {"enc_name": {"test_val": bd_in}}
-    ws = wb.get_sheet_by_name("Sheet")
+    ws = wb.get_sheet_by_name("details")
     _, yuv_file = os.path.split(yuv_file)
 
     # 汇总原始码率和 psnr/vmaf/ssim 信息
