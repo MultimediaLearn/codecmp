@@ -11,5 +11,5 @@ python score.py
 ```
 
 ## System Requirement
-- python 2.7 or above
+- python 3.8 or above
 - ffmpeg with libvmaf filter support

@@ -2,10 +2,11 @@
     "type": "refs",
     "refs": [
         {
-            "file": "resources/lol_160x120.yuv",
-            "dim_w": 160,
-            "dim_h": 120,
-            "fps": 25
+            "file": "~/video/lol_1920x1080.yuv",
+            "dim_w": 1920,
+            "dim_h": 1080,
+            "fps": 25,
+            "bitrates": [1000, 1500, 2000, 3000]
         }
     ]
 }

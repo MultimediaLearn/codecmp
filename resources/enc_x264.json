@@ -4,35 +4,30 @@
     {
         "name": "x264_origin",
         "class":"x264",
-        "bin_path": "x264_learn/x264",
+        "bin_path": "/data/home/root/x264_learn/x264",
         "comm_pars": [
-            "--preset faster --tune zerolatency --crf 23 --ref 1",
-            "--crf 30",
-            " --keyint 50 --bframes 0 --no-sliced-threads --threads 8"
+            "--preset superfast --tune zerolatency --ref 1",
+            "--ratetol 80 --scenecut 0 --threads 1",
+            "--keyint 50 --min-keyint 50 --qpmax 32",
+            "--bframes 0 --no-sliced-threads"
         ],
-        "bitrate_points":{
-            "--vbv-maxrate 1000 --vbv-bufsize 1000": 1000,
-            "--vbv-maxrate 2000 --vbv-bufsize 2000": 2000,
-            "--vbv-maxrate 3000 --vbv-bufsize 3000": 3000
-        },
-        "test_par": "--lookahead",
-        "test_value": ["0", "3"],
+        "rcs": [
+            "-B {target_br} --vbv-maxrate {vbv_br} --vbv-bufsize {vbv_br}"
+        ],
         "ref_ind": 0
     },
     {
         "name": "o264rt",
         "class":"openh264",
-        "bin_path": "openh264_learn/h264enc",
+        "bin_path": "/data/home/root/openh264_learn/h264enc",
         "comm_pars": [
-            "-numl 1 -cabac 1 -fs 0 -iper 50 -dprofile 0 main -rc 0"
+            "-numl 1 -cabac 1 -fs 0 -iper 50 -dprofile 0 main -rc 0",
+            "-maxqp 32 -threadIdc 1"
         ],
-        "bitrate_points":{
-            "1000": 1000,
-            "2000": 2000,
-            "3000": 3000
-        },
-        "test_par": "-numtl",
-        "test_value": ["1"]
+        "rcs": [
+            "-maxbrTotal {target_br}k -ltarb 0 {target_br}k -lmaxb 0 {target_br}k -tarb {target_br}k",
+            "-vbvbfsize {vbv_br}k -vbvmaxbr {vbv_br}k"
+        ]
     }
 ]
 }

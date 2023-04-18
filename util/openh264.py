@@ -24,21 +24,25 @@ def _log_process(msg):
 _cmd_pattern = "{enc_bin} -org {in_file} {comm_par} {test_par} {test_val} \
 -sw {sw} -sh {sh} -frin {in_fps} \
 -dw 0 {d0w} -dh 0 {d0h} -frout 0 {out0_fps} \
--ltarb 0 {bitrate}k -lmaxb 0 {bitrate}k -tarb {bitrate}k \
--bf {out} -trace 3" # open warning log
+{rc} -bf {out} -trace 3" # open warning log
 def run_eval(conf_enc, ref, kbps, val, main_file):
     test_par = ""
     test_val = ""
     if val is not None:
         test_val = val
         test_par = conf_enc["test_par"]
+    rc_str = " ".join(conf_enc["rcs"])
+    rc_str = rc_str.format(
+        target_br=int(kbps),
+        vbv_br=int(kbps * 1.05)
+    )
     cmd = _cmd_pattern.format(
             enc_bin=conf_enc["bin_path"],
             comm_par=" ".join(conf_enc["comm_pars"]),
             test_par=test_par,
             test_val=test_val,
             in_file=ref["file"],
-            bitrate=str(kbps),
+            rc=rc_str,
             sw=ref["dim_w"],
             sh=ref["dim_h"],
             d0w=ref["dim_w"],

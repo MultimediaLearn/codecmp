@@ -21,7 +21,7 @@ def get_csv_name(ref):
     return "ares_" + ref + "_"+ uid
 
 def get_main_name(enc_name, ref_name, val_str, rc):
-    rc_str = rc.replace(" ", "_").replace("-", "")
+    rc_str = str(rc)
     return "main_" + enc_name + "_" + ref_name + "_" + val_str + "_"+ rc_str + "_" + uid
 
 def load_config(conf_path):
@@ -47,15 +47,14 @@ def enc_score_calc(conf_enc, ref):
         val_str = "None" if val is None else val
         par_str = "None" if val is None else conf_enc["test_par"]
         score_rcs = {}
-        for rc in conf_enc["bitrate_points"]:
+        for rc_val in ref["bitrates"]:
             score_tmp = {}
-            rc_val = conf_enc["bitrate_points"][rc]
-            main_name = get_main_name(enc_name, ref_name, val_str, rc)
+            main_name = get_main_name(enc_name, ref_name, val_str, rc_val)
             score_cache = os.path.join(log_dir, main_name + ".pkl")
             if resume and os.path.isfile(score_cache):
                 with open(score_cache, "rb") as f:
                     score_tmp = pickle.load(f)
-                score_rcs[rc] = score_tmp
+                score_rcs[rc_val] = score_tmp
                 continue
 
             main_file = os.path.join(ref_dir, main_name + ".264")
@@ -63,9 +62,9 @@ def enc_score_calc(conf_enc, ref):
 
             # step1: encode, 遍历码率点和测试参数设定，得到编码输出信息(264文件名，帧数、fps、码率)
             if (conf_enc["class"] == "x264"):
-                res = x264.run_eval(conf_enc, ref, rc, val, main_file)
+                res = x264.run_eval(conf_enc, ref, rc_val, val, main_file)
             elif (conf_enc["class"] == "openh264"):
-                res = openh264.run_eval(conf_enc, ref, rc, val, main_file)
+                res = openh264.run_eval(conf_enc, ref, rc_val, val, main_file)
             else:
                 perror("unkonwn encoder " + conf_enc["class"])
                 exit(-1)
@@ -95,7 +94,6 @@ def enc_score_calc(conf_enc, ref):
                         "main": main_file,
                         "test_par": par_str,
                         "test_val": val_str,
-                        "rc": rc,
                         "bitrate": rc_val,   # kbps
                         "rbitrate": bitrate, # kbps
                         "frames": frames,
@@ -106,7 +104,7 @@ def enc_score_calc(conf_enc, ref):
                     }
 
             # 缓存一个码点的编码结果
-            score_rcs[rc] = score_tmp
+            score_rcs[rc_val] = score_tmp
             with open(score_cache, "wb") as f:
                 pickle.dump(score_tmp, f)
         scores[val_str] = score_rcs
