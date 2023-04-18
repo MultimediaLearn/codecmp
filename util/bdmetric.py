@@ -13,6 +13,8 @@ import scipy.interpolate
 # print 'BD-RATE: ', BD_RATE(R1, PSNR1, R2, PSNR2)
 
 def BD_PSNR(R1, PSNR1, R2, PSNR2, piecewise=0):
+    R1, PSNR1 = (list(t) for t in zip(*sorted(zip(R1, PSNR1))))
+    R2, PSNR2 = (list(t) for t in zip(*sorted(zip(R2, PSNR2))))
     lR1 = np.log(R1)
     lR2 = np.log(R2)
 
@@ -51,6 +53,8 @@ def BD_PSNR(R1, PSNR1, R2, PSNR2, piecewise=0):
 
 
 def BD_RATE(R1, PSNR1, R2, PSNR2, piecewise=0):
+    R1, PSNR1 = (list(t) for t in zip(*sorted(zip(R1, PSNR1))))
+    R2, PSNR2 = (list(t) for t in zip(*sorted(zip(R2, PSNR2))))
     lR1 = np.log(R1)
     lR2 = np.log(R2)
 

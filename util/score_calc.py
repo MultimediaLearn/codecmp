@@ -12,13 +12,14 @@ def bdrate(ref_bitrate, ref_metric, main_bitrate, main_metric):
 # scores = {}, key1: test_value, key2: bitrates, value: vmaf/psnr/ssim
 # bdmetrics()
 def scores_calc(csv_file, ref_name, bd_ref_name, val_ref, scores):
+    val_ref_key = ""
     bd_ref = []         # bdrate 计算参考数据，[(码率，[psnrs, ssims, vmafs]), ...]
     bd_mains = {}       # {"enc_name": {"test_val": bd_in}}
 
     # 汇总原始码率和 psnr/vmaf/ssim 信息
     with open_csv(csv_file, "w") as f:
         writer = csv.writer(f, delimiter=",")
-        writer.writerow(["enc_name", "target_kbps", "kbps", "real_kbps", "bps_error", "file_size",
+        writer.writerow(["enc_name", "kbps", "real_kbps", "bps_error", "file_size",
                          "psnr", "ssim", "vmaf", "parameter"])
         for enc_name in scores:
             if enc_name in ["_ref_"]:
@@ -37,9 +38,9 @@ def scores_calc(csv_file, ref_name, bd_ref_name, val_ref, scores):
                     score = scores_test[kbps]
                     writer.writerow([
                         enc_name,
-                        score["rc"],
                         round(score["bitrate"], 2),
                         round(score["rbitrate"], 2),
+                        round((score["bitrate"] - score["rbitrate"]) / score["bitrate"], 2),
                         score["size"],
                         round(score["psnr"], 5),
                         round(score["ssim"], 5),
@@ -62,10 +63,11 @@ def scores_calc(csv_file, ref_name, bd_ref_name, val_ref, scores):
                 if enc_name == bd_ref_name and (val_ref is None or test_val == val_ref):
                     bd_ref = bd_in
                     bd_ref_name = enc_name
+                    val_ref_key = score["test_par"] + " " + test_val
                 else:
                     if enc_name not in bd_mains:
                         bd_mains[enc_name] = {}
-                    bd_mains[enc_name][test_val] = bd_in
+                    bd_mains[enc_name][score["test_par"] + " " + test_val] = (bd_in)
 
     print(bd_mains)
     bd_ref_bitrates = bd_ref[0]
@@ -75,7 +77,7 @@ def scores_calc(csv_file, ref_name, bd_ref_name, val_ref, scores):
         print("*" * 100, enc_name)
         enc_item = bd_mains[enc_name]
         for key_main in enc_item:
-            print("---------[" + bd_ref_name + " " + str(val_ref) + "] VS [" +
+            print("---------[" + bd_ref_name + " " + str(val_ref_key) + "] VS [" +
                                  enc_name + " " + str(key_main) + "]------------")
             bd_in = enc_item[key_main]
             kbitrates = bd_in[0]
@@ -91,6 +93,6 @@ def scores_calc(csv_file, ref_name, bd_ref_name, val_ref, scores):
                 bd = bdrate(bd_ref_bitrates, bd_ref_metrics[key], kbitrates, metric)
                 pinfo(bd) # 一个值
                 bds[key] = bd
-            bdrates_ref[enc_name + ' ' + str(key_main)] = bds
+            bdrates_ref[str(key_main)] = (enc_name, bds)
 
     return bdrates_ref

@@ -9,13 +9,14 @@ from arguments import *
 
 def save_refs(writer, res):
     print(res)
+    writer.writerow(["file", "enc_name", "psnr", "ssim", "vmaf", "par"])
     for ref_key in res:
         bd_refs = res[ref_key]
         for par_key in bd_refs:
-            bd = bd_refs[par_key]
-            writer.writerow([
+            enc_name, bd = bd_refs[par_key]
+            writer.writerow([ ref_key, enc_name,
                 round(bd["psnr"], 5), round(bd["ssim"], 5), round(bd["vmaf"], 5),
-                ref_key, par_key
+                par_key
                 ])
 
 if __name__ == "__main__":

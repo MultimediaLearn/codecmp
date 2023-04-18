@@ -45,15 +45,16 @@ def enc_score_calc(conf_enc, ref):
     for val in vals:
         val_str = "None" if val is None else val
         par_str = "None" if val is None else conf_enc["test_par"]
+        score_rcs = {}
         for rc in conf_enc["bitrate_points"]:
+            score_tmp = {}
             rc_val = conf_enc["bitrate_points"][rc]
             main_name = get_main_name(enc_name, ref_name, val_str, rc)
             score_cache = os.path.join(log_dir, main_name + ".pkl")
-            score_tmp = {}
             if resume and os.path.isfile(score_cache):
                 with open(score_cache, "rb") as f:
                     score_tmp = pickle.load(f)
-                scores[val_str] = score_tmp
+                score_rcs[rc] = score_tmp
                 continue
 
             main_file = os.path.join(ref_dir, main_name + ".264")
@@ -88,7 +89,7 @@ def enc_score_calc(conf_enc, ref):
                     pwarn("estimated bitrate=%f" % bitrate)
 
                 # 汇总step1 和 step2结果
-                score_tmp[rc] = {
+                score_tmp = {
                         "ref": ref_file,
                         "main": main_file,
                         "test_par": par_str,
@@ -104,9 +105,10 @@ def enc_score_calc(conf_enc, ref):
                     }
 
             # 缓存一个码点的编码结果
+            score_rcs[rc] = score_tmp
             with open(score_cache, "wb") as f:
                 pickle.dump(score_tmp, f)
-            scores[val_str] = score_tmp
+        scores[val_str] = score_rcs
 
     print(scores)
     return scores
@@ -120,6 +122,7 @@ def eval(enc_json, refs_json, resume):
     conf_encs = load_config(enc_json)    # 加载编码配置信息
     for yuv in ref_yuvs:
         yuv_file = yuv["file"]
+        pinfo("*" * 20 + f" process {yuv_file} " + "*" * 20)
         [_, ref_name, _] = sep_path_segs(yuv_file)
         csv_file = log_dir + get_csv_name(ref_name) + ".csv"
         scores_cache_path = os.path.join(cache_dir, ref_name + "_scores_cache.pkl")
