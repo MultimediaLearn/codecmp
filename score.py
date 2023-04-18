@@ -13,17 +13,15 @@ import util.x264 as x264
 import util.openh264 as openh264
 
 from util.vutil import *
+from util.score_calc import scores_calc
 from arguments import *
 
 def get_csv_name(ref):
     return "ares_" + ref + "_"+ uid
 
-def get_main_name(ref_name, val, rc):
+def get_main_name(enc_name, ref_name, val_str, rc):
     rc_str = rc.replace(" ", "_").replace("-", "")
-    return "main_" + ref_name + "_" + val + "_"+ rc_str + "_" + uid
-
-def get_json_name(main):
-    return main + "_score"
+    return "main_" + enc_name + "_" + ref_name + "_" + val_str + "_"+ rc_str + "_" + uid
 
 def load_config(conf_path):
     pinfo("load config file [%s]" % conf_path)
@@ -36,17 +34,32 @@ def load_config(conf_path):
     return conf
 
 # ref with different encode parameters: rc x test_value
-# TODO(vacing): split loop by json generation to support resume
-def score_ref_calc(conf_enc, ref):
+def enc_score_calc(conf_enc, ref):
     out_files = {}
     ref_file = ref["file"]
     [_, ref_name, _] = sep_path_segs(ref_file)
+    enc_name = conf_enc["name"]
 
-    # step1: encode, 遍历码率点和测试参数设定，得到编码输出信息(264文件名，帧数、fps、码率)
-    for val in conf_enc["test_value"]:
+    scores = {}     # key1: test_value, key2: rc, value: vmaf/psnr/ssim
+    vals = conf_enc["test_value"]
+    for val in vals:
+        val_str = "None" if val is None else val
+        par_str = "None" if val is None else conf_enc["test_par"]
         for rc in conf_enc["bitrate_points"]:
-            main_file = ref_dir + get_main_name(ref_name, val, rc) + ".264"
-            # 分开类别方便解析输出
+            rc_val = conf_enc["bitrate_points"][rc]
+            main_name = get_main_name(enc_name, ref_name, val_str, rc)
+            score_cache = os.path.join(log_dir, main_name + ".pkl")
+            score_tmp = {}
+            if resume and os.path.isfile(score_cache):
+                with open(score_cache, "rb") as f:
+                    score_tmp = pickle.load(f)
+                scores[val_str] = score_tmp
+                continue
+
+            main_file = os.path.join(ref_dir, main_name + ".264")
+            json_path = os.path.join(log_dir, main_name + ".json")
+
+            # step1: encode, 遍历码率点和测试参数设定，得到编码输出信息(264文件名，帧数、fps、码率)
             if (conf_enc["class"] == "x264"):
                 res = x264.run_eval(conf_enc, ref, rc, val, main_file)
             elif (conf_enc["class"] == "openh264"):
@@ -56,29 +69,16 @@ def score_ref_calc(conf_enc, ref):
                 exit(-1)
             out_files[main_file] = res
 
-    # step2: 使用ffmpeg 命令行，calc psnr/vmaf/ssim score and save to json
-    pdebug(out_files)
-    for main_file in out_files:
-        [_, main_name, _] = sep_path_segs(main_file)
-        log_path=log_dir + get_json_name(main_name) + ".json"
-        dim = str(ref["dim_w"]) + "x" + str(ref["dim_h"])
-        ff.run_eval(main_file, ref_file, dim, log_path)
+            # step2: 使用ffmpeg 命令行，calc psnr/vmaf/ssim score and save to json
+            dim = str(ref["dim_w"]) + "x" + str(ref["dim_h"])
+            ff.run_eval(main_file, ref_file, dim, json_path)
 
-    # 汇总分析
-    scores = {}     # key1: test_value, key2: rc, value: vmaf/psnr/ssim
-    for val in conf_enc["test_value"]:
-        print(conf_enc["test_par"] + " " + val + ":")
-        scores_tmp = {}
-        for rc in conf_enc["bitrate_points"]:
-            # 重新得到 264 文件名(step1 key)
-            main_name = get_main_name(ref_name, val, rc)
-            main_file = ref_dir + main_name + ".264"
-            # 重新得到 json 文件名(step2 结果)
-            json_path = log_dir + get_json_name(main_name) + ".json"
+            # step3: 汇总分析
             with open(json_path, 'r') as score_f:
                 score = json.load(score_f)
                 filesize = os.path.getsize(main_file)
                 frames = out_files[main_file]["total_frames"]
+                # TODO(vacing): unify bitrate caculation
                 bitrate = 0
                 if ("bitrate" in out_files[main_file] and
                     out_files[main_file]["bitrate"]):
@@ -88,13 +88,13 @@ def score_ref_calc(conf_enc, ref):
                     pwarn("estimated bitrate=%f" % bitrate)
 
                 # 汇总step1 和 step2结果
-                # TODO(vacing): unify bitrate caculation
-                scores_tmp[rc] = {
+                score_tmp[rc] = {
                         "ref": ref_file,
                         "main": main_file,
-                        "test_par": conf_enc["test_par"],
-                        "test": val,
+                        "test_par": par_str,
+                        "test_val": val_str,
                         "rc": rc,
+                        "bitrate": rc_val,   # kbps
                         "rbitrate": bitrate, # kbps
                         "frames": frames,
                         "vmaf": score['pooled_metrics']["vmaf"]['mean'],
@@ -102,124 +102,69 @@ def score_ref_calc(conf_enc, ref):
                         "ssim": score['pooled_metrics']["float_ssim"]['mean'],
                         "size": filesize
                     }
-            print("rc:" + rc + "\t")
-            print(scores_tmp)
-        scores[val] = scores_tmp
 
+            # 缓存一个码点的编码结果
+            with open(score_cache, "wb") as f:
+                pickle.dump(score_tmp, f)
+            scores[val_str] = score_tmp
+
+    print(scores)
     return scores
 
-def bdrate(ref_bitrate, ref_metric, main_bitrate, main_metric):
-    return bd.BD_RATE(np.array(ref_bitrate), np.array(ref_metric),
-                      np.array(main_bitrate), np.array(main_metric))
-
-# scores = {}, key1: test_value, key2: bitrates, value: vmaf/psnr/ssim
-# bdmetrics()
-def scores_calc(ref_name, val_ref, scores):
-    csv_file = log_dir + get_csv_name(ref_name) + ".csv"
-    pinfo(csv_file)
-    bd_ref = []         # bdrate 计算参考数据，[(码率，[psnrs, ssims, vmafs]), ...]
-    bd_mains = {}       # bdrate 目标数据集，多个bdrate数据
-    test_par = str()
-
-    # 汇总原始码率和 psnr/vmaf/ssim 信息
-    with open_csv(csv_file, "w") as f:
-        writer = csv.writer(f, delimiter=",")
-        writer.writerow(["target_kbps", "real_kbps", "bps_error", "file_size",
-                         "psnr", "ssim", "vmaf", "parameter"])
-        for test_val in scores:
-            bd_in = []
-            if test_val == val_ref:
-                bd_in = bd_ref
-
-            scores_test = scores[test_val]
-            target_sorted = sorted(scores_test, reverse=True)
-            kbitrates = []
-            metrics = {}
-            metrics["psnr"] = []
-            metrics["ssim"] = []
-            metrics["vmaf"] = []
-            for kbps in target_sorted:
-                score = scores_test[kbps]
-                if not test_par:
-                    test_par = score["test_par"]
-                writer.writerow([
-                    score["rc"],
-                    round(score["rbitrate"], 2),
-                    score["size"],
-                    round(score["psnr"], 5),
-                    round(score["ssim"], 5),
-                    round(score["vmaf"], 5),
-                    score["test_par"] + " " + score["test"]
-                    ])
-                kbitrates.append(score["rbitrate"])
-                metrics["psnr"].append(score["psnr"])
-                metrics["ssim"].append(score["ssim"])
-                metrics["vmaf"].append(score["vmaf"])
-            # [0]: [1000, 2000, 3000, ...]
-            # [1]: {
-            #       "psnr": [80, 90, 91, ...]
-            #       "ssim": [81, 90, 92, ...]
-            #       "vmaf": [82, 90, 93, ...]
-            #       }
-            bd_in.append(kbitrates)
-            bd_in.append(metrics)
-            if test_val != val_ref:
-                bd_mains[test_val] = bd_in
-
-    bd_ref_bitrates = bd_ref[0]
-    bd_ref_metrics = bd_ref[1]
-    bdrates_ref = {}
-    for key_main in bd_mains: # 多个测试条件bdrate计算
-        print("---------[" + test_par + " " + str(val_ref) + "] VS [" +
-                             test_par + " " + str(key_main) + "]------------")
-        bd_in = bd_mains[key_main]
-        kbitrates = bd_in[0]
-        metrics = bd_in[1]
-        bds = {}
-        for key in metrics: # psnr, ssim vmaf
-            print("---------[" + str(key) + "]------------")
-            metric = metrics[key]
-            pdebug(np.array(bd_ref_bitrates))
-            pdebug(np.array(bd_ref_metrics[key]))
-            pdebug(np.array(kbitrates))
-            pdebug(np.array(metric))
-            bd = bdrate(bd_ref_bitrates, bd_ref_metrics[key], kbitrates, metric)
-            pinfo(bd) # 一个值
-            bds[key] = bd
-        bdrates_ref[test_par + ' ' + str(key_main)] = bds
-
-    return bdrates_ref
-
 def eval(enc_json, refs_json, resume):
-    conf_enc = load_config(enc_json)    # 加载编码配置信息
-    conf_enc = conf_enc["encs"][0]
-    conf_refs = load_config(refs_json)  # 加载编码参考YUV文件信息
-    conf_refs = conf_refs["refs"]
+    ref_yuvs = load_config(refs_json)  # 加载编码参考YUV文件信息
+    ref_yuvs = ref_yuvs["refs"]
 
+    enc_scores = {}     # {"enc_name": {"test_val": {"rc": {infos} } } }
     bdrates_all = {}
-    for ref in conf_refs:
-        ref_file = ref["file"]
-        [_, ref_name, _] = sep_path_segs(ref_file)
-        scores_cache_path = cache_dir + ref_name + "_scores_cache.pkl"
+    conf_encs = load_config(enc_json)    # 加载编码配置信息
+    for yuv in ref_yuvs:
+        yuv_file = yuv["file"]
+        [_, ref_name, _] = sep_path_segs(yuv_file)
+        csv_file = log_dir + get_csv_name(ref_name) + ".csv"
+        scores_cache_path = os.path.join(cache_dir, ref_name + "_scores_cache.pkl")
+
         if (resume and os.path.isfile(scores_cache_path)):
             # 恢复状态
             with open(scores_cache_path, "rb") as f:
-                scores = pickle.load(f)
+                enc_scores = pickle.load(f)
         else:
-            # 重新计算
-            scores = score_ref_calc(conf_enc, ref)
+            for conf_enc in conf_encs["encs"]:
+                enc_name = conf_enc["name"]
+                has_test_value = True
+                if "test_value" not in conf_enc:
+                    has_test_value = False
+                    conf_enc["test_value"] = [None]
+                    conf_enc["test_par"] = [None]
+                if "ref_ind" in conf_enc:
+                    ref_ind = conf_enc["ref_ind"] if has_test_value else None
+                    enc_scores["_ref_"] = (conf_enc, ref_ind)
+
+                # 重新计算
+                enc_score = enc_score_calc(conf_enc, yuv)
+                enc_scores[enc_name] = enc_score
+
+            # 保存状态
             with open(scores_cache_path, "wb") as f:
-                pickle.dump(scores, f)
+                pickle.dump(enc_scores, f)
 
         # 得到 bdrate计算基准
-        test_val_ref_ind = conf_enc["test_value_ref_ind"]
-        test_val_ref = conf_enc["test_value"][test_val_ref_ind]
+        if "_ref_" not in enc_scores:
+            perror("reference not found in scores:")
+            perror(enc_scores)
+            return None
+        (bd_ref_enc, bd_ref_ind) = enc_scores["_ref_"]
+        bd_ref_name = bd_ref_enc["name"]
+        test_val_ref = None
+        if bd_ref_ind is not None:
+            test_val_ref = bd_ref_enc["test_value"][bd_ref_ind]
         # 计算bdrate
-        bdrates_ref = scores_calc(ref_name, test_val_ref, scores)
-        bdrates_all[ref_file] = bdrates_ref
+        bdrates_ref = scores_calc(csv_file, ref_name, bd_ref_name, test_val_ref, enc_scores)
+        bdrates_all[yuv_file] = bdrates_ref
 
     return bdrates_all
 
+resume = args.resume
 uid = args.id
 out_dir = "out_" + str(uid) + "/"
 log_dir = out_dir + "log/"

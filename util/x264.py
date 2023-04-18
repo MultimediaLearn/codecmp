@@ -19,11 +19,16 @@ def _log_process(msg: str):
 _cmd_pattern = "{enc_bin} {in_par} {comm_par} {rc} -r {fps} \
 {test_par} {test_val} -o {out} {in_file}"
 def run_eval(conf_enc, ref, rc, val, main_file):
+    test_par = ""
+    test_val = ""
+    if val is not None:
+        test_val = val
+        test_par = conf_enc["test_par"]
     x264_cmd = _cmd_pattern.format(
             enc_bin=conf_enc["bin_path"],
-            comm_par=conf_enc["comm_par"],
-            test_par=conf_enc["test_par"],
-            test_val=val,
+            comm_par=" ".join(conf_enc["comm_pars"]),
+            test_par=test_par,
+            test_val=test_val,
             in_file=ref["file"],
             in_par="--input-res " + str(ref["dim_w"]) + "x" + str(ref["dim_h"]),
             rc=rc,

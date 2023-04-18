@@ -27,11 +27,16 @@ _cmd_pattern = "{enc_bin} -org {in_file} {comm_par} {test_par} {test_val} \
 -ltarb 0 {bitrate}k -lmaxb 0 {bitrate}k -tarb {bitrate}k \
 -bf {out} -trace 3" # open warning log
 def run_eval(conf_enc, ref, kbps, val, main_file):
+    test_par = ""
+    test_val = ""
+    if val is not None:
+        test_val = val
+        test_par = conf_enc["test_par"]
     cmd = _cmd_pattern.format(
             enc_bin=conf_enc["bin_path"],
-            comm_par=conf_enc["comm_par"],
-            test_par=conf_enc["test_par"],
-            test_val=val,
+            comm_par=" ".join(conf_enc["comm_pars"]),
+            test_par=test_par,
+            test_val=test_val,
             in_file=ref["file"],
             bitrate=str(kbps),
             sw=ref["dim_w"],

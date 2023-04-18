@@ -1,17 +1,38 @@
 {
-    "type":"encoder",
-    "enc": {
+"type":"encoder",
+"encs": [
+    {
+        "name": "x264_origin",
         "class":"x264",
-        "bin_path": "x264",
-        "comm_par": "--qp 24 --ref 2 --bframes 3",
-        "rcs":[
-               "--crf 30 --vbv-maxrate 100 --vbv-bufsize 100",
-               "--crf 25 --vbv-maxrate 200 --vbv-bufsize 200",
-               "--crf 20 --vbv-maxrate 300 --vbv-bufsize 300",
-               "--crf 16 --vbv-maxrate 400 --vbv-bufsize 400"
+        "bin_path": "x264_learn/x264",
+        "comm_pars": [
+            "--preset faster --tune zerolatency --crf 23 --ref 1",
+            "--crf 30",
+            " --keyint 50 --bframes 0 --no-sliced-threads --threads 8"
         ],
-        "test_par": "--b-pyramid",
-        "test_value": ["none", "strict"],
-        "test_value_ref_ind": 0
+        "bitrate_points":{
+            "--vbv-maxrate 1000 --vbv-bufsize 1000": 1000,
+            "--vbv-maxrate 2000 --vbv-bufsize 2000": 2000,
+            "--vbv-maxrate 3000 --vbv-bufsize 3000": 3000
+        },
+        "test_par": "--lookahead",
+        "test_value": ["0", "3"],
+        "ref_ind": 0
+    },
+    {
+        "name": "o264rt",
+        "class":"openh264",
+        "bin_path": "openh264_learn/h264enc",
+        "comm_pars": [
+            "-numl 1 -cabac 1 -fs 0 -iper 50 -dprofile 0 main -rc 0"
+        ],
+        "bitrate_points":{
+            "1000": 1000,
+            "2000": 2000,
+            "3000": 3000
+        },
+        "test_par": "-numtl",
+        "test_value": ["1"]
     }
+]
 }
