@@ -1,6 +1,6 @@
 import re
 
-from vutil import *
+from .vutil import *
 
 # Width:          160
 # Height:         120

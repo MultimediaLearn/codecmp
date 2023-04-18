@@ -1,11 +1,11 @@
 import re
 
-from vutil import *
+from .vutil import *
 
 # x264 conclusion demo:
 # encoded 100 frames, 18.98 fps, 770.82 kb/s
 x264_res = re.compile('encoded (?P<frames>\d+) frames, (?P<fps>[\d.]+) fps, (?P<kbps>[\d.]+) kb/s')
-def _log_process(msg):
+def _log_process(msg: str):
     lines = msg.split('\n')
     res = lines[-2]
     res_match = x264_res.match(res)

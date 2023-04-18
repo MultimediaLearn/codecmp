@@ -19,7 +19,7 @@ def save_refs(writer, res):
                 ])
 
 if __name__ == "__main__":
-    print "Input arguments list:",
+    print("Input arguments list:")
     print(pretty_args(args, tabs="  "))
 
     enc = args.enc
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # create path directory
     [csv_path, _, _] = sep_path_segs(res_path)
     if (csv_path):
-        print csv_path
+        print(csv_path)
         make_dir(csv_path)
 
     if not os.path.exists(res_path) or os.path.isfile(res_path):

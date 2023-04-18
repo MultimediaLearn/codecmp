@@ -44,6 +44,7 @@ def init_logger(fn=None):
 def exe_enc_cmd(cmd, log_process):
     pinfo(cmd)
     output = subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)
+    output = output.decode('utf-8')
     pdebug("out=[\n%s]" % output)
     return log_process(output)
 
