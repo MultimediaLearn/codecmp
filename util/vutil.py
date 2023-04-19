@@ -44,10 +44,12 @@ def init_logger(level=logging.INFO, logfile=None):
     logging.basicConfig(**logging_params)
     logging.debug('init basic configure of logging success')
 
-def exe_enc_cmd(cmd, log_process):
+def exe_log_cmd(cmd, log_process):
     pwarn(cmd)
     output = subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)
     output = output.decode('utf-8')
+    if log_process is None:
+        return None
     pinfo("out=[\n%s]" % output)
     return log_process(output)
 

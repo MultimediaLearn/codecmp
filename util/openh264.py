@@ -53,6 +53,6 @@ def run_eval(conf_enc, ref, kbps, val, main_file):
             out=main_file
             )
 
-    res = exe_enc_cmd(cmd, _log_process)
+    res = exe_log_cmd(cmd, _log_process)
     return res
 

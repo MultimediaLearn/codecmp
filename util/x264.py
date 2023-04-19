@@ -41,6 +41,6 @@ def run_eval(conf_enc, ref, kbps, val, main_file):
             fps=ref["fps"],
             out=main_file
             )
-    res = exe_enc_cmd(x264_cmd, _log_process)
+    res = exe_log_cmd(x264_cmd, _log_process)
     return res
 
