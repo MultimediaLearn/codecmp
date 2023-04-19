@@ -22,7 +22,7 @@ def _log_process(msg):
 
 # -rc 0 must set
 _cmd_pattern = "{enc_bin} -org {in_file} {comm_par} {test_par} {test_val} \
--sw {sw} -sh {sh} -frin {in_fps} \
+-sw {sw} -sh {sh} -frin {in_fps} -iper {iper} \
 -dw 0 {d0w} -dh 0 {d0h} -frout 0 {out0_fps} \
 {rc} -bf {out} -trace 3" # open warning log
 def run_eval(conf_enc, ref, kbps, val, main_file):
@@ -48,6 +48,7 @@ def run_eval(conf_enc, ref, kbps, val, main_file):
             d0w=ref["dim_w"],
             d0h=ref["dim_h"],
             in_fps=ref["fps"],
+            iper=ref["fps"] * 2,
             out0_fps=ref["fps"],
             out=main_file
             )

@@ -2,10 +2,13 @@
 import os
 import csv
 import numpy as np
+import openpyxl
+import matplotlib.pyplot as plt
 from openpyxl import Workbook
 
 from .bdmetric import BD_RATE
 from .vutil import *
+from .xlsx_tool import xlsx_ws_bold_row
 
 def bdrate(ref_bitrate, ref_metric, main_bitrate, main_metric):
     return BD_RATE(np.array(ref_bitrate), np.array(ref_metric),
@@ -19,6 +22,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
     bd_mains = {}       # {"enc_name": {"test_val": bd_in}}
     ws = wb.get_sheet_by_name("details")
     _, yuv_file = os.path.split(yuv_file)
+    csv_path, _ = os.path.split(csv_file)
 
     # 汇总原始码率和 psnr/vmaf/ssim 信息
     with open_csv(csv_file, "w") as f:
@@ -28,6 +32,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
         writer.writerow(head)
         if ws.dimensions == "A1:A1":
             ws.append(head)
+            xlsx_ws_bold_row(ws, 1)
 
         for enc_name in scores:
             if enc_name in ["_ref_"]:
@@ -44,7 +49,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                 metrics["vmaf"] = []
                 for kbps in target_sorted:
                     score = scores_test[kbps]
-                    bps_error = (score["bitrate"] - score["rbitrate"]) / score["bitrate"] * 100
+                    bps_error = (score["rbitrate"] - score["bitrate"]) / score["bitrate"] * 100
                     content = [
                         yuv_file,
                         enc_name,
@@ -79,9 +84,8 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                 else:
                     if enc_name not in bd_mains:
                         bd_mains[enc_name] = {}
-                    bd_mains[enc_name][score["test_par"] + " " + test_val] = (bd_in)
+                    bd_mains[enc_name][score["test_par"] + "_" + test_val] = (bd_in)
 
-    print(bd_mains)
     bd_ref_bitrates = bd_ref[0]
     bd_ref_metrics = bd_ref[1]
     bdrates_ref = {}
@@ -95,16 +99,30 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
             kbitrates = bd_in[0]
             metrics = bd_in[1]
             bds = {}
+            fig, axes = plt.subplots(1, len(metrics))
+            fig.set_size_inches(10, 3)
+            ind = 0
             for key in metrics: # psnr, ssim vmaf
                 print("---------[" + str(key) + "]------------")
-                metric = metrics[key]
+                metric_main = metrics[key]
+                ref_metric = bd_ref_metrics[key]
                 pdebug(np.array(bd_ref_bitrates))
-                pdebug(np.array(bd_ref_metrics[key]))
+                pdebug(np.array(ref_metric))
                 pdebug(np.array(kbitrates))
-                pdebug(np.array(metric))
-                bd = bdrate(bd_ref_bitrates, bd_ref_metrics[key], kbitrates, metric)
+                pdebug(np.array(metric_main))
+                bd, rets = bdrate(bd_ref_bitrates, ref_metric, kbitrates, metric_main)
                 pinfo(bd) # 一个值
+                axs = axes[ind]
+                ind += 1
+                axs.plot(rets[0], rets[1], linestyle='dotted', marker='o', color="green")   # ref
+                axs.plot(rets[2], rets[3], linestyle='solid', marker='*', color="blue")    # main
+                axs.set_title(key, fontsize=11, color="red")
                 bds[key] = bd
-            bdrates_ref[str(key_main)] = (enc_name, bds)
+            png_tmp = os.path.join(csv_path, "_".join([yuv_file, enc_name, key_main]) + ".png")
+            fig.suptitle(yuv_file, fontsize=12)
+            fig.savefig(png_tmp)
+            plt.close()
+
+            bdrates_ref[str(key_main)] = (enc_name, bds, png_tmp)
 
     return bdrates_ref
