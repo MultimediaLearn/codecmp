@@ -90,10 +90,9 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
     bd_ref_metrics = bd_ref[1]
     bdrates_ref = {}
     for enc_name in bd_mains: # 多个测试条件bdrate计算
-        print("*" * 100, enc_name)
         enc_item = bd_mains[enc_name]
         for key_main in enc_item:
-            print("---------[" + bd_ref_name + " " + str(val_ref_key) + "] VS [" +
+            pdebug("---------[" + bd_ref_name + " " + str(val_ref_key) + "] VS [" +
                                  enc_name + " " + str(key_main) + "]------------")
             bd_in = enc_item[key_main]
             kbitrates = bd_in[0]
@@ -103,7 +102,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
             fig.set_size_inches(10, 3)
             ind = 0
             for key in metrics: # psnr, ssim vmaf
-                print("---------[" + str(key) + "]------------")
+                pdebug("---------[" + str(key) + "]------------")
                 metric_main = metrics[key]
                 ref_metric = bd_ref_metrics[key]
                 pdebug(np.array(bd_ref_bitrates))
@@ -111,7 +110,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                 pdebug(np.array(kbitrates))
                 pdebug(np.array(metric_main))
                 bd, rets = bdrate(bd_ref_bitrates, ref_metric, kbitrates, metric_main)
-                pinfo(bd) # 一个值
+                pinfo("%s %s %s %s: bdrate=%.2f", yuv_file, enc_name, key_main, key, bd) # 一个值
                 axs = axes[ind]
                 ind += 1
                 axs.plot(rets[0], rets[1], linestyle='dotted', marker='o', color="green")   # ref

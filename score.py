@@ -23,6 +23,7 @@ def get_csv_name(ref):
 def get_main_name(enc_name, ref_name, val_str, rc):
     rc_str = str(rc)
     return "main_" + enc_name + "_" + ref_name + "_" + val_str + "_"+ rc_str + "_" + uid
+    # return "main_" + ref_name + "_" + enc_name + "_" + val_str + "_"+ rc_str + "_" + uid
 
 def load_config(conf_path):
     pinfo("load config file [%s]" % conf_path)
@@ -52,6 +53,7 @@ def enc_score_calc(conf_enc, ref):
             main_name = get_main_name(enc_name, ref_name, val_str, rc_val)
             score_cache = os.path.join(log_dir, main_name + ".pkl")
             if resume and os.path.isfile(score_cache):
+                pwarn("encode result %s use CACHED result", score_cache)
                 with open(score_cache, "rb") as f:
                     score_tmp = pickle.load(f)
                 score_rcs[rc_val] = score_tmp
@@ -109,7 +111,6 @@ def enc_score_calc(conf_enc, ref):
                 pickle.dump(score_tmp, f)
         scores[val_str] = score_rcs
 
-    print(scores)
     return scores
 
 def eval(enc_json, refs_json, resume, wb: Workbook):
@@ -121,13 +122,14 @@ def eval(enc_json, refs_json, resume, wb: Workbook):
     conf_encs = load_config(enc_json)    # 加载编码配置信息
     for yuv in ref_yuvs:
         yuv_file = yuv["file"]
-        pinfo("*" * 20 + f" process {yuv_file} " + "*" * 20)
+        pinfo(f"process {yuv_file}")
         [_, ref_name, _] = sep_path_segs(yuv_file)
         csv_file = log_dir + get_csv_name(ref_name) + ".csv"
         scores_cache_path = os.path.join(cache_dir, ref_name + "_scores_cache.pkl")
 
         if (resume and os.path.isfile(scores_cache_path)):
             # 恢复状态
+            pwarn("yuv file %s use CACHED result", yuv_file)
             with open(scores_cache_path, "rb") as f:
                 enc_scores = pickle.load(f)
         else:
@@ -184,12 +186,12 @@ make_dir(cache_dir)
 #  - 每个参数取值的bdrate 曲线(3条：psnr, ssim, vmaf)(由多个码点计算得到)
 if __name__ == "__main__":
     wb = Workbook()
-    print("Input arguments list:")
-    print(pretty_args(args, tabs="  "))
+    pwarn("Input arguments list:")
+    pwarn(pretty_args(args, tabs="  "))
     if args.resume:
         pwarn("will resume the previous process")
     else:
         pwarn("will rerun all process")
 
-    print(eval(args.enc, args.refs, args.resume, wb))
+    pinfo(eval(args.enc, args.refs, args.resume, wb))
 

@@ -14,42 +14,45 @@ def pretty_args(args, tabs=''):
         args_str += '\n' + tabs + '%s:\t[%s]' % (arg, repr(getattr(args, arg)))
     return args_str
 
-def perror(msg):
-    print("\033[1;31mERROR: %s\033[1;0m" % msg)
+perror = logging.error
+pwarn  = logging.warning
+pinfo  = logging.info
+pdebug = logging.debug
 
-def pwarn(msg):
-    print("\033[1;33mWARNING: %s\033[1;0m" % msg)
+# def perror(msg):
+#     # print("\033[1;31mERROR: %s\033[1;0m" % msg)
+# def pwarn(msg):
+#     # print("\033[1;33mWARNING: %s\033[1;0m" % msg)
+# def pinfo(msg):
+#     # print("\033[1;34mINFO: %s\033[1;0m" % msg)
+# def pdebug(msg):
+#     logging.debug(msg)
 
-def pinfo(msg):
-    print("\033[1;34mINFO: %s\033[1;0m" % msg)
-
-def pdebug(msg):
-    print(msg)
-
-def init_logger(fn=None):
+def init_logger(level=logging.INFO, logfile=None):
     from imp import reload
     reload(logging)
 
-    logging_params = { 
-        'level': logging.INFO,
-        'format': '%(asctime)s__[%(levelname)s, %(module)s.%(funcName)s](%(name)s)__[L%(lineno)d] %(message)s',
-    }   
+    logging_params = {
+        'level': level,
+        'filemode': 'w',
+        'format': '%(asctime)s[%(levelname)s, %(module)s.%(funcName)s](%(name)s)[L%(lineno)d] %(message)s',
+    }
 
-    if fn is not None:
-        logging_params['filename'] = fn
+    if logfile is not None:
+        logging_params['filename'] = logfile
 
     logging.basicConfig(**logging_params)
     logging.debug('init basic configure of logging success')
 
 def exe_enc_cmd(cmd, log_process):
-    pinfo(cmd)
+    pwarn(cmd)
     output = subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)
     output = output.decode('utf-8')
-    pdebug("out=[\n%s]" % output)
+    pinfo("out=[\n%s]" % output)
     return log_process(output)
 
 def exe_cmd(cmd):
-    pinfo(cmd)
+    pwarn(cmd)
     process = os.popen(cmd)
     output = process.read()
     # output = subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)

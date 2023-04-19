@@ -13,7 +13,7 @@ from util.xlsx_tool import *
 
 def save_refs(res, ws, ws_fig):
     # print(res)
-    head = ["file", "enc_name", "psnr", "ssim", "vmaf", "par"]
+    head = ["file", "psnr", "ssim", "vmaf", "enc_name", "par"]
     if ws.dimensions == "A1:A1":
         print(head)
         ws.append(head)
@@ -24,9 +24,9 @@ def save_refs(res, ws, ws_fig):
         _, yuv_file = os.path.split(ref_key)
         for par_key in bd_refs:
             enc_name, bd, bd_fig = bd_refs[par_key]
-            content = [ yuv_file, enc_name,
+            content = [ yuv_file,
                 round(bd["psnr"], 5), round(bd["ssim"], 5), round(bd["vmaf"], 5),
-                par_key
+                enc_name, par_key
                 ]
             ws.append(content)
             print(content)
@@ -37,12 +37,15 @@ def save_refs(res, ws, ws_fig):
             img = openpyxl.drawing.image.Image(bd_fig)
             ws_fig.add_image(img, anchor_cell)
             fig_pos_row += 20
-    xlsx_ws_neg_bg(ws, 1, 2)
+    xlsx_ws_neg_bg(ws, 1, 1)
     xlsx_ws_bold_col(ws, "A")
 
 if __name__ == "__main__":
     print("Input arguments list:")
     print(pretty_args(args, tabs="  "))
+    init_logger(level=logging.INFO, logfile=args.res + ".log")
+    pwarn("Input arguments list:")
+    pwarn(pretty_args(args, tabs="  "))
 
     enc = args.enc
     refs = args.refs
@@ -58,22 +61,18 @@ if __name__ == "__main__":
     # create path directory
     [res_path, _, _] = sep_path_segs(res_file)
     if (res_path):
-        pinfo(res_path)
         make_dir(res_path)
 
     if os.path.isfile(refs):
         pwarn("single file mode: %s" % refs)
         csv_file = res_file
-        pinfo(csv_file)
         _, yuv_name = os.path.split(refs)
         res = score.eval(enc, refs, resume, wb)
         save_refs(res, ws_bdrate, ws_fig)
     elif os.path.isdir(refs):
         pwarn("directory/batch mode: %s" % refs)
         for fname in glob.iglob(refs + "*.json"):
-            pinfo(fname)
             csv_file = res_file
-            pinfo(csv_file)
             _, yuv_name = os.path.split(fname)
             res = score.eval(enc, fname, resume, wb)
             save_refs(res, ws_bdrate, ws_fig)
