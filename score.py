@@ -22,8 +22,8 @@ def get_csv_name(ref):
 
 def get_main_name(enc_name, ref_name, val_str, rc):
     rc_str = str(rc)
-    return "main_" + enc_name + "_" + ref_name + "_" + val_str + "_"+ rc_str + "_" + uid
-    # return "main_" + ref_name + "_" + enc_name + "_" + val_str + "_"+ rc_str + "_" + uid
+    # return "main_" + enc_name + "_" + ref_name + "_" + val_str + "_"+ rc_str + "_" + uid
+    return "main_" + ref_name + "_" + enc_name + "_" + val_str + "_"+ rc_str + "_" + uid
 
 def load_config(conf_path):
     pinfo("load config file [%s]" % conf_path)
@@ -124,7 +124,7 @@ def eval(enc_json, refs_json, resume, wb: Workbook):
         yuv_file = yuv["file"]
         pinfo(f"process {yuv_file}")
         [_, ref_name, _] = sep_path_segs(yuv_file)
-        csv_file = log_dir + get_csv_name(ref_name) + ".csv"
+        csv_file = os.path.join(cache_dir, get_csv_name(ref_name) + ".csv")
         scores_cache_path = os.path.join(cache_dir, ref_name + "_scores_cache.pkl")
 
         if (resume and os.path.isfile(scores_cache_path)):

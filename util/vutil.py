@@ -35,7 +35,7 @@ def init_logger(level=logging.INFO, logfile=None):
     logging_params = {
         'level': level,
         'filemode': 'w',
-        'format': '%(asctime)s[%(levelname)s, %(module)s.%(funcName)s](%(name)s)[L%(lineno)d] %(message)s',
+        'format': '%(asctime)s[%(levelname)s, %(module)s.%(funcName)s:L%(lineno)d](%(name)s) %(message)s',
     }
 
     if logfile is not None:

@@ -69,6 +69,8 @@ if __name__ == "__main__":
         _, yuv_name = os.path.split(refs)
         res = score.eval(enc, refs, resume, wb)
         save_refs(res, ws_bdrate, ws_fig)
+        xlsx_col_fit(wb)
+        wb.save(res_file)
     elif os.path.isdir(refs):
         pwarn("directory/batch mode: %s" % refs)
         for fname in glob.iglob(refs + "*.json"):
@@ -76,6 +78,8 @@ if __name__ == "__main__":
             _, yuv_name = os.path.split(fname)
             res = score.eval(enc, fname, resume, wb)
             save_refs(res, ws_bdrate, ws_fig)
+            xlsx_col_fit(wb)
+            wb.save(res_file)
     else:
         perror("unknown refs file/dir [%s]" % refs)
         exit(-1)

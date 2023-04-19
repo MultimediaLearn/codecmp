@@ -16,7 +16,8 @@ def _log_process(msg: str):
           }
     return ret
 
-_cmd_pattern = "{enc_bin} {in_par} {comm_par} {rc} -r {fps} \
+# -r 不指定framerate，指定的是 fps
+_cmd_pattern = "{enc_bin} {in_par} {comm_par} {rc} --fps {fps} \
 {test_par} {test_val} -o {out} {in_file}"
 def run_eval(conf_enc, ref, kbps, val, main_file):
     test_par = ""
