@@ -17,7 +17,7 @@ def _log_process(msg: str):
     return ret
 
 # -r 不指定framerate，指定的是 fps
-_cmd_pattern = "{enc_bin} {in_par} {comm_par} {rc} --fps {fps} \
+_cmd_pattern = "{enc_bin} {in_par} {comm_par} {rc} --fps {fps} --keyint {key_gap} --min-keyint {key_gap} \
 {test_par} {test_val} -o {out} {in_file}"
 def run_eval(conf_enc, ref, kbps, val, main_file):
     test_par = ""
@@ -39,6 +39,7 @@ def run_eval(conf_enc, ref, kbps, val, main_file):
             in_par="--input-res " + str(ref["dim_w"]) + "x" + str(ref["dim_h"]),
             rc=rc_str,
             fps=ref["fps"],
+            key_gap=ref["fps"] * 2,
             out=main_file
             )
     res = exe_log_cmd(x264_cmd, _log_process)

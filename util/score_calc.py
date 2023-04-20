@@ -2,17 +2,16 @@
 import os
 import csv
 import numpy as np
-import openpyxl
 import matplotlib.pyplot as plt
 from openpyxl import Workbook
 
-from .bdmetric import BD_RATE
+from .bdmetric import bdrate_v265
 from .vutil import *
 from .xlsx_tool import xlsx_ws_bold_row
 
 def bdrate(ref_bitrate, ref_metric, main_bitrate, main_metric):
-    return BD_RATE(np.array(ref_bitrate), np.array(ref_metric),
-                      np.array(main_bitrate), np.array(main_metric))
+    return bdrate_v265(np.array(ref_bitrate), np.array(ref_metric),
+                      np.array(main_bitrate), np.array(main_metric), piecewise=1)
 
 # scores = {}, key1: test_value, key2: bitrates, value: vmaf/psnr/ssim
 # bdmetrics()
@@ -47,9 +46,10 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                 metrics["psnr"] = []
                 metrics["ssim"] = []
                 metrics["vmaf"] = []
+                metrics["bps_diff"] = []
                 for kbps in target_sorted:
                     score = scores_test[kbps]
-                    bps_error = (score["rbitrate"] - score["bitrate"]) / score["bitrate"] * 100
+                    bps_error = abs(score["rbitrate"] - score["bitrate"]) / score["bitrate"] * 100
                     content = [
                         yuv_file,
                         enc_name,
@@ -68,6 +68,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                     metrics["psnr"].append(score["psnr"])
                     metrics["ssim"].append(score["ssim"])
                     metrics["vmaf"].append(score["vmaf"])
+                    metrics["bps_diff"].append(bps_error)
                 # [0]: [1000, 2000, 3000, ...]
                 # [1]: {
                 #       "psnr": [80, 90, 91, ...]
@@ -99,7 +100,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
             metrics = bd_in[1]
             bds = {}
             fig, axes = plt.subplots(1, len(metrics))
-            fig.set_size_inches(10, 3)
+            fig.set_size_inches(12, 3)
             ind = 0
             for key in metrics: # psnr, ssim vmaf
                 pdebug("---------[" + str(key) + "]------------")
@@ -115,8 +116,9 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                 ind += 1
                 axs.plot(rets[0], rets[1], linestyle='dotted', marker='o', color="green")   # ref
                 axs.plot(rets[2], rets[3], linestyle='solid', marker='*', color="blue")    # main
-                axs.set_title(key, fontsize=11, color="red")
-                bds[key] = bd
+                axs.set_title(key, fontsize=10, color="red")
+                if key != "bps_diff":
+                    bds[key] = bd
             png_tmp = os.path.join(csv_path, "_".join([yuv_file, enc_name, key_main]) + ".png")
             fig.suptitle(yuv_file, fontsize=12)
             fig.savefig(png_tmp)
