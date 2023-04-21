@@ -22,8 +22,7 @@ def get_csv_name(ref):
 
 def get_main_name(enc_name, ref_name, val_str, rc):
     rc_str = str(rc)
-    # return "main_" + enc_name + "_" + ref_name + "_" + val_str + "_"+ rc_str + "_" + uid
-    return "main_" + ref_name + "_" + enc_name + "_" + val_str + "_"+ rc_str + "_" + uid
+    return ref_name + "_" + enc_name + "_" + val_str + "_"+ rc_str + "_" + uid
 
 def load_config(conf_path):
     pinfo("load config file [%s]" % conf_path)

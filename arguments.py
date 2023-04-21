@@ -21,6 +21,8 @@ parser.add_argument('--id', default="default",
         help='id of this run')
 parser.add_argument('--resume', default=False, type=str2bool,
         help='continue the score process')
+parser.add_argument('--is-init', default=False, type=str2bool,
+        help='is first init or not')
 
 args = parser.parse_args()
 

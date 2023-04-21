@@ -43,7 +43,7 @@ def save_refs(res, ws, ws_fig):
 if __name__ == "__main__":
     print("Input arguments list:")
     print(pretty_args(args, tabs="  "))
-    init_logger(level=logging.INFO, logfile=args.res + "." + str(args.resume) + ".log")
+    init_logger(level=logging.INFO, logfile=args.res + "." + str(args.is_init) + ".log")
     pwarn("Input arguments list:")
     pwarn(pretty_args(args, tabs="  "))
 
