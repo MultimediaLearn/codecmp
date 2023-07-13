@@ -45,21 +45,35 @@ def init_logger(level=logging.INFO, logfile=None):
     logging.basicConfig(**logging_params)
     logging.debug('init basic configure of logging success')
 
+class ExeCost:
+    def __init__(self):
+        self.utime = 0
+        self.stime  = 0
+
+    def __init__(self, res_start: resource, res_end: resource):
+        self.utime = res_end.ru_utime - res_start.ru_utime
+        self.stime = res_end.ru_stime - res_start.ru_stime
+
 def exe_log_cmd(cmd, log_process):
     pwarn(cmd)
+    usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
     output = subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)
+    usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
     output = output.decode('utf-8')
     if log_process is None:
         return None
     pinfo("out=[\n%s]" % output)
-    return log_process(output)
+    return (log_process(output), ExeCost(usage_start, usage_end))
 
 def exe_cmd(cmd):
     pwarn(cmd)
+    usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
     process = os.popen(cmd)
+    usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
     output = process.read()
     # output = subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT)
     # print("out=[%s]" % output)
+    return ExeCost(usage_start, usage_end)
 
 def open_csv(filename, mode='r'):
     """Open a csv file in proper mode depending on Python verion."""

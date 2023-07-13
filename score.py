@@ -61,11 +61,12 @@ def enc_score_calc(conf_enc, ref):
             main_file = os.path.join(ref_dir, main_name + ".264")
             json_path = os.path.join(log_dir, main_name + ".json")
 
+            exe_info = ExeCost
             # step1: encode, 遍历码率点和测试参数设定，得到编码输出信息(264文件名，帧数、fps、码率)
             if (conf_enc["class"] == "x264"):
-                res = x264.run_eval(conf_enc, ref, rc_val, val, main_file)
+                res, exe_info = x264.run_eval(conf_enc, ref, rc_val, val, main_file)
             elif (conf_enc["class"] == "openh264"):
-                res = openh264.run_eval(conf_enc, ref, rc_val, val, main_file)
+                res, exe_info = openh264.run_eval(conf_enc, ref, rc_val, val, main_file)
             else:
                 perror("unkonwn encoder " + conf_enc["class"])
                 exit(-1)
@@ -73,7 +74,7 @@ def enc_score_calc(conf_enc, ref):
 
             # step2: 使用ffmpeg 命令行，calc psnr/vmaf/ssim score and save to json
             dim = str(ref["dim_w"]) + "x" + str(ref["dim_h"])
-            ssim_all, psnr_avg = ff.run_eval(main_file, ref_file, dim, json_path)
+            (ssim_all, psnr_avg), _ = ff.run_eval(main_file, ref_file, dim, json_path)
 
             # step3: 汇总分析
             with open(json_path, 'r') as score_f:
@@ -95,6 +96,8 @@ def enc_score_calc(conf_enc, ref):
                         "main": main_file,
                         "test_par": par_str,
                         "test_val": val_str,
+                        "utime": exe_info.utime,
+                        "stime": exe_info.stime,
                         "bitrate": rc_val,   # kbps
                         "rbitrate": bitrate, # kbps
                         "frames": frames,

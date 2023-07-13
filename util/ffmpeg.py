@@ -17,7 +17,7 @@ def ff_metric_get(msg: str):
         res_match = psnr_res.match(res)
         if res_match:
             psnr_avg = float(res_match.groupdict()["psnr_avg"])
-    return {ssim_all, psnr_avg}
+    return (ssim_all, psnr_avg)
 
 _ffmpeg_path = '/data/home/vacingfang/FFmpeg/install_vmaf/bin/ffmpeg'
 _cmd_patern = '{ffmpeg_path} -i {main} -s:v {ref_dim} -i {ref} -filter_complex "\

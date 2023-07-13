@@ -13,7 +13,7 @@ from util.xlsx_tool import *
 
 def save_refs(res, ws, ws_fig):
     # print(res)
-    head = ["file", "psnr_avg", "psnr_y", "ssim_all", "ssim", "vmaf", "enc_name", "par"]
+    head = ["file", "psnr_avg", "psnr_y", "ssim_all", "ssim", "vmaf", "time_save(u+s)%", "enc_name", "par"]
     if ws.dimensions == "A1:A1":
         print(head)
         ws.append(head)
@@ -27,7 +27,7 @@ def save_refs(res, ws, ws_fig):
             content = [ yuv_file,
                 round(bd["psnr_avg"], 5), round(bd["psnr_y"], 5),
                 round(bd["ssim_all"], 5), round(bd["ssim"], 5), round(bd["vmaf"], 5),
-                enc_name, par_key
+                round(bd["time"] * 100, 2), enc_name, par_key
                 ]
             ws.append(content)
             print(content)
