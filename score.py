@@ -73,7 +73,7 @@ def enc_score_calc(conf_enc, ref):
 
             # step2: 使用ffmpeg 命令行，calc psnr/vmaf/ssim score and save to json
             dim = str(ref["dim_w"]) + "x" + str(ref["dim_h"])
-            ff.run_eval(main_file, ref_file, dim, json_path)
+            ssim_all, psnr_avg = ff.run_eval(main_file, ref_file, dim, json_path)
 
             # step3: 汇总分析
             with open(json_path, 'r') as score_f:
@@ -99,7 +99,9 @@ def enc_score_calc(conf_enc, ref):
                         "rbitrate": bitrate, # kbps
                         "frames": frames,
                         "vmaf": score['pooled_metrics']["vmaf"]['mean'],
-                        "psnr": score['pooled_metrics']["psnr_y"]['mean'],
+                        "psnr_avg": psnr_avg,
+                        "psnr_y": score['pooled_metrics']["psnr_y"]['mean'],
+                        "ssim_all": ssim_all,
                         "ssim": score['pooled_metrics']["float_ssim"]['mean'],
                         "size": filesize
                     }

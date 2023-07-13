@@ -27,7 +27,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
     with open_csv(csv_file, "w") as f:
         writer = csv.writer(f, delimiter=",")
         head = ["yuv_name", "enc_name", "kbps", "real_kbps", "bps_error",
-                "psnr", "ssim", "vmaf", "parameter"]
+                "psnr_avg", "psnr_y", "ssim_all", "ssim", "vmaf", "parameter"]
         writer.writerow(head)
         if ws.dimensions == "A1:A1":
             ws.append(head)
@@ -43,7 +43,9 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                 target_sorted = sorted(scores_test, reverse=True)
                 kbitrates = []
                 metrics = {}
-                metrics["psnr"] = []
+                metrics["psnr_avg"] = []
+                metrics["psnr_y"] = []
+                metrics["ssim_all"] = []
                 metrics["ssim"] = []
                 metrics["vmaf"] = []
                 metrics["bps_diff"] = []
@@ -56,7 +58,9 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                         round(score["bitrate"], 2),
                         round(score["rbitrate"], 2),
                         round(bps_error, 2),
-                        round(score["psnr"], 5),
+                        round(score["psnr_avg"], 5),
+                        round(score["psnr_y"], 5),
+                        round(score["ssim_all"], 5),
                         round(score["ssim"], 5),
                         round(score["vmaf"], 5),
                         score["test_par"] + " " + score["test_val"]
@@ -65,7 +69,9 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                     writer.writerow(content)
                     ws.append(content)
                     kbitrates.append(score["rbitrate"])
-                    metrics["psnr"].append(score["psnr"])
+                    metrics["psnr_avg"].append(score["psnr_avg"])
+                    metrics["psnr_y"].append(score["psnr_y"])
+                    metrics["ssim_all"].append(score["ssim_all"])
                     metrics["ssim"].append(score["ssim"])
                     metrics["vmaf"].append(score["vmaf"])
                     metrics["bps_diff"].append(bps_error)
@@ -100,7 +106,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
             metrics = bd_in[1]
             bds = {}
             fig, axes = plt.subplots(1, len(metrics))
-            fig.set_size_inches(12, 3)
+            fig.set_size_inches(15, 3)
             ind = 0
             for key in metrics: # psnr, ssim vmaf
                 pdebug("---------[" + str(key) + "]------------")

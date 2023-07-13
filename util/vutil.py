@@ -7,6 +7,7 @@ import glob
 import logging
 import random
 import subprocess
+import resource
 
 def pretty_args(args, tabs=''):
     args_str = ''

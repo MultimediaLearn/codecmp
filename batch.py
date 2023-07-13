@@ -13,7 +13,7 @@ from util.xlsx_tool import *
 
 def save_refs(res, ws, ws_fig):
     # print(res)
-    head = ["file", "psnr", "ssim", "vmaf", "enc_name", "par"]
+    head = ["file", "psnr_avg", "psnr_y", "ssim_all", "ssim", "vmaf", "enc_name", "par"]
     if ws.dimensions == "A1:A1":
         print(head)
         ws.append(head)
@@ -25,7 +25,8 @@ def save_refs(res, ws, ws_fig):
         for par_key in bd_refs:
             enc_name, bd, bd_fig = bd_refs[par_key]
             content = [ yuv_file,
-                round(bd["psnr"], 5), round(bd["ssim"], 5), round(bd["vmaf"], 5),
+                round(bd["psnr_avg"], 5), round(bd["psnr_y"], 5),
+                round(bd["ssim_all"], 5), round(bd["ssim"], 5), round(bd["vmaf"], 5),
                 enc_name, par_key
                 ]
             ws.append(content)
@@ -43,15 +44,17 @@ def save_refs(res, ws, ws_fig):
 if __name__ == "__main__":
     print("Input arguments list:")
     print(pretty_args(args, tabs="  "))
-    init_logger(level=logging.INFO, logfile=args.res + "." + str(args.is_init) + ".log")
-    pwarn("Input arguments list:")
-    pwarn(pretty_args(args, tabs="  "))
 
     enc = args.enc
     refs = args.refs
     resume = args.resume
-    uid = args.id
-    res_file = args.res
+    out_dir = "out_" + str(args.id) + "/"
+    res_file = os.path.join(out_dir, args.res)
+
+    init_logger(level=logging.INFO, logfile=res_file + "." + str(args.is_init) + ".log")
+    pwarn("Input arguments list:")
+    pwarn(pretty_args(args, tabs="  "))
+
     wb = Workbook()
     ws_bdrate = wb.active
     ws_bdrate.title = "bdrate"
