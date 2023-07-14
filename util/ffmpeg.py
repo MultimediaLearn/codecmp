@@ -21,11 +21,11 @@ def ff_metric_get(msg: str):
 
 _ffmpeg_path = '/data/home/vacingfang/FFmpeg/install_vmaf/bin/ffmpeg'
 _cmd_patern = '{ffmpeg_path} -i {main} -s:v {ref_dim} -i {ref} -filter_complex "\
-[0:v]settb=AVTB,setpts=PTS-STARTPTS[main];[1:v]settb=AVTB,setpts=PTS-STARTPTS[ref];\
+[0:v]settb=AVTB,setpts=N[main];[1:v]settb=AVTB,setpts=N[ref];\
 [main]split=3[main1][main2][main3];[ref]split=3[ref1][ref2][ref3];\
 [main1][ref1]libvmaf=feature=name=psnr|name=float_ssim:log_path={vmaf_log_path}:log_fmt=json:shortest=1;\
-[main2][ref2]psnr=stats_file={psnr_log_path};\
-[main3][ref3]ssim=stats_file={ssim_log_path}\
+[main2][ref2]psnr=stats_file={psnr_log_path}:shortest=1;\
+[main3][ref3]ssim=stats_file={ssim_log_path}:shortest=1\
 " -f null -'
 
 def run_eval(main_file, ref_file, dim, log_path):

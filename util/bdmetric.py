@@ -158,7 +158,7 @@ def bdrate_v265(rate1, psnr1, rate2, psnr2, piecewise=1):
     min_psnr = max(min(psnr1), min(psnr2))
     max_psnr = min(max(psnr1), max(psnr2))
     if min(psnr1) == max(psnr1) or min(psnr2) == max(psnr2):
-        return 0
+        return 0, (rate1, psnr1, rate2, psnr2)
 
     v1 = __bdrint(rate1, psnr1, min_psnr, max_psnr)
     v2 = __bdrint(rate2, psnr2, min_psnr, max_psnr)

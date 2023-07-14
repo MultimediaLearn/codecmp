@@ -15,7 +15,7 @@ def bdrate(ref_bitrate, ref_metric, main_bitrate, main_metric):
 
 # scores = {}, key1: test_value, key2: bitrates, value: vmaf/psnr/ssim
 # bdmetrics()
-def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
+def scores_calc(csv_file: str, yuv_file: str, bd_ref_name, val_ref, scores, wb: Workbook):
     val_ref_key = ""
     bd_ref = []         # bdrate 计算参考数据，[(码率，[psnrs, ssims, vmafs]), ...]
     bd_mains = {}       # {"enc_name": {"test_val": bd_in}}
@@ -23,10 +23,11 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
     _, yuv_file = os.path.split(yuv_file)
     csv_path, _ = os.path.split(csv_file)
 
+    yuv_class = ""
     # 汇总原始码率和 psnr/vmaf/ssim 信息
     with open_csv(csv_file, "w") as f:
         writer = csv.writer(f, delimiter=",")
-        head = ["yuv_name", "enc_name", "kbps", "real_kbps", "bps_error",
+        head = ["class", "yuv_name", "enc_name", "kbps", "real_kbps", "bps_error",
                 "psnr_avg", "psnr_y", "ssim_all", "ssim", "vmaf", "utime", "stime", "parameter"]
         writer.writerow(head)
         if ws.dimensions == "A1:A1":
@@ -54,6 +55,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                     score = scores_test[kbps]
                     bps_error = abs(score["rbitrate"] - score["bitrate"]) / score["bitrate"] * 100
                     content = [
+                        score["class"],
                         yuv_file,
                         enc_name,
                         round(score["bitrate"], 2),
@@ -79,6 +81,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                     metrics["vmaf"].append(score["vmaf"])
                     metrics["bps_diff"].append(bps_error)
                     metrics["time"].append(score["utime"] + score["stime"])
+                    yuv_class = score["class"]
                 # [0]: [1000, 2000, 3000, ...]
                 # [1]: {
                 #       "psnr": [80, 90, 91, ...]
@@ -121,7 +124,7 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                 pdebug(np.array(kbitrates))
                 pdebug(np.array(metric_main))
                 bd, rets = bdrate(bd_ref_bitrates, ref_metric, kbitrates, metric_main)
-                pinfo("%s %s %s %s: bdrate=%.2f", yuv_file, enc_name, key_main, key, bd) # 一个值
+                pinfo("%s %s %s %s %s: bdrate=%.2f", yuv_class, yuv_file, enc_name, key_main, key, bd) # 一个值
                 axs = axes[ind]
                 ind += 1
                 axs.plot(rets[0], rets[1], linestyle='dotted', marker='o', color="green")   # ref
@@ -133,8 +136,8 @@ def scores_calc(csv_file, yuv_file, bd_ref_name, val_ref, scores, wb: Workbook):
                     bds[key] = (main_mean - ref_mean) / ref_mean
                 elif key != "bps_diff":
                     bds[key] = bd
-            png_tmp = os.path.join(csv_path, "_".join([yuv_file, enc_name, key_main]) + ".png")
-            fig.suptitle(yuv_file, fontsize=12)
+            png_tmp = os.path.join(csv_path, "_".join([yuv_class, yuv_file, enc_name, key_main]) + ".png")
+            fig.suptitle("(" + yuv_class + ")" + yuv_file, fontsize=12)
             fig.savefig(png_tmp)
             plt.close()
 

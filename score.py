@@ -15,11 +15,11 @@ from util.score_calc import scores_calc
 from arguments import *
 
 def get_csv_name(ref):
-    return "ares_" + ref + "_"+ uid
+    return "ares_" + ref
 
-def get_main_name(enc_name, ref_name, val_str, rc):
+def get_main_name(enc_name: str, ref_class: str, ref_name: str, val_str, rc):
     rc_str = str(rc)
-    return ref_name + "_" + enc_name + "_" + val_str + "_"+ rc_str + "_" + uid
+    return "_".join([ref_class, ref_name, enc_name, val_str, rc_str])
 
 def load_config(conf_path):
     pinfo("load config file [%s]" % conf_path)
@@ -34,6 +34,7 @@ def load_config(conf_path):
 # ref with different encode parameters: rc x test_value
 def enc_score_calc(conf_enc: json, ref: json):
     out_files = {}
+    ref_class = ref["class"]
     ref_file = ref["file"]
     [_, ref_name, _] = sep_path_segs(ref_file)
     enc_name = conf_enc["name"]
@@ -46,7 +47,7 @@ def enc_score_calc(conf_enc: json, ref: json):
         score_rcs = {}
         for rc_val in ref["bitrates"]:
             score_tmp = {}
-            main_name = get_main_name(enc_name, ref_name, val_str, rc_val)
+            main_name = get_main_name(enc_name, ref_class, ref_name, val_str, rc_val)
             score_cache = os.path.join(log_dir, main_name + ".pkl")
             if resume and os.path.isfile(score_cache):
                 pwarn("encode result %s use CACHED result", score_cache)
@@ -137,6 +138,7 @@ def eval(enc_json: str, refs_jsons: list, resume: bool, wb: Workbook):
             assert("file" in yuv)
             yuv_file, score_res = eval_yuv(conf_encs, ref_base, yuv, resume, wb)
             bdrates_all[yuv_file] = score_res
+            print("Finished: ", yuv_file)
 
     return bdrates_all
 

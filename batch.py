@@ -34,6 +34,9 @@ def save_refs(res, ws, ws_fig):
             ws.append(content)
             print(content)
             anchor_cell = "A" + str(fig_pos_row)
+            ws_fig[anchor_cell] = ref_res.fclass
+            ws_fig[anchor_cell].font = Font(bold=True)
+            anchor_cell = "B" + str(fig_pos_row)
             ws_fig[anchor_cell] = yuv_file
             ws_fig[anchor_cell].font = Font(bold=True)
             anchor_cell = "A" + str(fig_pos_row + 1)
