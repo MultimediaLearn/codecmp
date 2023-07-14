@@ -13,21 +13,23 @@ from util.xlsx_tool import *
 
 def save_refs(res, ws, ws_fig):
     # print(res)
-    head = ["file", "psnr_avg", "psnr_y", "ssim_all", "ssim", "vmaf", "time_save(u+s)%", "enc_name", "par"]
+    head = ["class", "file", "psnr_avg", "psnr_y", "ssim_all", "ssim", "vmaf",
+            "time_save(u+s)%", "enc_name", "label", "par"]
     if ws.dimensions == "A1:A1":
         print(head)
         ws.append(head)
         xlsx_ws_bold_row(ws, 1)
     fig_pos_row = 1
     for ref_key in res:
-        bd_refs = res[ref_key]
+        ref_res = res[ref_key]
+        bd_refs = ref_res.bdres
         _, yuv_file = os.path.split(ref_key)
         for par_key in bd_refs:
             enc_name, bd, bd_fig = bd_refs[par_key]
-            content = [ yuv_file,
+            content = [ ref_res.fclass, yuv_file,
                 round(bd["psnr_avg"], 5), round(bd["psnr_y"], 5),
                 round(bd["ssim_all"], 5), round(bd["ssim"], 5), round(bd["vmaf"], 5),
-                round(bd["time"] * 100, 2), enc_name, par_key
+                round(bd["time"] * 100, 2), enc_name, ref_res.flabel, par_key
                 ]
             ws.append(content)
             print(content)
@@ -66,26 +68,7 @@ if __name__ == "__main__":
     if (res_path):
         make_dir(res_path)
 
-    if os.path.isfile(refs):
-        pwarn("single file mode: %s" % refs)
-        csv_file = res_file
-        _, yuv_name = os.path.split(refs)
-        res = score.eval(enc, refs, resume, wb)
-        save_refs(res, ws_bdrate, ws_fig)
-        xlsx_col_fit(wb)
-        wb.save(res_file)
-    elif os.path.isdir(refs):
-        pwarn("directory/batch mode: %s" % refs)
-        for fname in glob.iglob(refs + "*.json"):
-            csv_file = res_file
-            _, yuv_name = os.path.split(fname)
-            res = score.eval(enc, fname, resume, wb)
-            save_refs(res, ws_bdrate, ws_fig)
-            xlsx_col_fit(wb)
-            wb.save(res_file)
-    else:
-        perror("unknown refs file/dir [%s]" % refs)
-        exit(-1)
-
-xlsx_col_fit(wb)
-wb.save(res_file)
+    res = score.eval(enc, refs, resume, wb)
+    save_refs(res, ws_bdrate, ws_fig)
+    xlsx_col_fit(wb)
+    wb.save(res_file)

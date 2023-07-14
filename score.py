@@ -1,9 +1,6 @@
 #encoding=utf-8
 import json
-import subprocess
-import re
-import csv
-import argparse
+import os
 import pickle
 import numpy as np
 from openpyxl import Workbook
@@ -35,7 +32,7 @@ def load_config(conf_path):
     return conf
 
 # ref with different encode parameters: rc x test_value
-def enc_score_calc(conf_enc, ref):
+def enc_score_calc(conf_enc: json, ref: json):
     out_files = {}
     ref_file = ref["file"]
     [_, ref_name, _] = sep_path_segs(ref_file)
@@ -92,6 +89,7 @@ def enc_score_calc(conf_enc, ref):
 
                 # 汇总step1 和 step2结果
                 score_tmp = {
+                        "class": ref["class"],
                         "ref": ref_file,
                         "main": main_file,
                         "test_par": par_str,
@@ -117,60 +115,84 @@ def enc_score_calc(conf_enc, ref):
 
     return scores
 
-def eval(enc_json, refs_json, resume, wb: Workbook):
-    ref_yuvs = load_config(refs_json)  # 加载编码参考YUV文件信息
-    ref_yuvs = ref_yuvs["refs"]
+class RefScoreRes:
+    def __init__(self, fclass: str, flabel: str, bdres):
+        self.fclass = fclass
+        self.flabel = flabel
+        self.bdres = bdres
 
-    enc_scores = {}     # {"enc_name": {"test_val": {"rc": {infos} } } }
+def eval(enc_json: str, refs_jsons: list, resume: bool, wb: Workbook):
     bdrates_all = {}
     conf_encs = load_config(enc_json)    # 加载编码配置信息
-    for yuv in ref_yuvs:
-        yuv_file = yuv["file"]
-        pinfo(f"process {yuv_file}")
-        [_, ref_name, _] = sep_path_segs(yuv_file)
-        csv_file = os.path.join(cache_dir, get_csv_name(ref_name) + ".csv")
-        scores_cache_path = os.path.join(cache_dir, ref_name + "_scores_cache.pkl")
-
-        if (resume and os.path.isfile(scores_cache_path)):
-            # 恢复状态
-            pwarn("yuv file %s use CACHED result", yuv_file)
-            with open(scores_cache_path, "rb") as f:
-                enc_scores = pickle.load(f)
-        else:
-            for conf_enc in conf_encs["encs"]:
-                enc_name = conf_enc["name"]
-                has_test_value = True
-                if "test_value" not in conf_enc:
-                    has_test_value = False
-                    conf_enc["test_value"] = [None]
-                    conf_enc["test_par"] = [None]
-                if "ref_ind" in conf_enc:
-                    ref_ind = conf_enc["ref_ind"] if has_test_value else None
-                    enc_scores["_ref_"] = (conf_enc, ref_ind)
-
-                # 重新计算
-                enc_score = enc_score_calc(conf_enc, yuv)
-                enc_scores[enc_name] = enc_score
-
-            # 保存状态
-            with open(scores_cache_path, "wb") as f:
-                pickle.dump(enc_scores, f)
-
-        # 得到 bdrate计算基准
-        if "_ref_" not in enc_scores:
-            perror("reference not found in scores:")
-            perror(enc_scores)
-            return None
-        (bd_ref_enc, bd_ref_ind) = enc_scores["_ref_"]
-        bd_ref_name = bd_ref_enc["name"]
-        test_val_ref = None
-        if bd_ref_ind is not None:
-            test_val_ref = bd_ref_enc["test_value"][bd_ref_ind]
-        # 计算bdrate
-        bdrates_ref = scores_calc(csv_file, yuv_file, bd_ref_name, test_val_ref, enc_scores, wb)
-        bdrates_all[yuv_file] = bdrates_ref
+    if isinstance(refs_jsons, str):
+        refs_jsons = [refs_jsons]
+    for yuvs_json in refs_jsons:
+        ref_confs = load_config(yuvs_json)  # 加载编码参考YUV文件信息
+        assert("base_dir" in ref_confs)
+        assert("refs" in ref_confs)
+        ref_base = ref_confs["base_dir"]
+        ref_yuvs = ref_confs["refs"]
+        for yuv in ref_yuvs:
+            assert("class" in yuv)
+            assert("file" in yuv)
+            yuv_file, score_res = eval_yuv(conf_encs, ref_base, yuv, resume, wb)
+            bdrates_all[yuv_file] = score_res
 
     return bdrates_all
+
+def eval_yuv(conf_encs: json, ref_base: str, yuv: json, resume: bool, wb: Workbook) -> RefScoreRes:
+    enc_scores = {}     # {"enc_name": {"test_val": {"rc": {infos} } } }
+
+    ref_class = yuv["class"]
+    ref_base = yuv["base_dir"] if "base_dir" in yuv else ref_base
+    ref_label = yuv["label"] if "label" in yuv else ""
+
+    yuv_file = os.path.join(ref_base, yuv["file"])
+    yuv["file"] = yuv_file      # updatge file to absolute path
+    pinfo(f"process {yuv_file}")
+    [_, ref_name, _] = sep_path_segs(yuv_file)
+    csv_file = os.path.join(cache_dir, get_csv_name(ref_name) + ".csv")
+    scores_cache_path = os.path.join(cache_dir, ref_name + "_scores_cache.pkl")
+
+    if (resume and os.path.isfile(scores_cache_path)):
+        # 恢复状态
+        pwarn("yuv file %s use CACHED result", yuv_file)
+        with open(scores_cache_path, "rb") as f:
+            enc_scores = pickle.load(f)
+    else:
+        for conf_enc in conf_encs["encs"]:
+            enc_name = conf_enc["name"]
+            has_test_value = True
+            if "test_value" not in conf_enc:
+                has_test_value = False
+                conf_enc["test_value"] = [None]
+                conf_enc["test_par"] = [None]
+            if "ref_ind" in conf_enc:
+                ref_ind = conf_enc["ref_ind"] if has_test_value else None
+                enc_scores["_ref_"] = (conf_enc, ref_ind)
+
+            # 重新计算
+            enc_score = enc_score_calc(conf_enc, yuv)
+            enc_scores[enc_name] = enc_score
+
+        # 保存状态
+        with open(scores_cache_path, "wb") as f:
+            pickle.dump(enc_scores, f)
+
+    # 得到 bdrate计算基准
+    if "_ref_" not in enc_scores:
+        perror("reference not found in scores:")
+        perror(enc_scores)
+        return None
+    (bd_ref_enc, bd_ref_ind) = enc_scores["_ref_"]
+    bd_ref_name = bd_ref_enc["name"]
+    test_val_ref = None
+    if bd_ref_ind is not None:
+        test_val_ref = bd_ref_enc["test_value"][bd_ref_ind]
+    # 计算bdrate
+    bdrates_ref = scores_calc(csv_file, yuv_file, bd_ref_name, test_val_ref, enc_scores, wb)
+
+    return (yuv_file, RefScoreRes(ref_class, ref_label, bdrates_ref))
 
 resume = args.resume
 uid = args.id

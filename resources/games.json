@@ -1,12 +1,15 @@
 {
     "type": "refs",
+    "base_dir": "~/video/",
     "refs": [
         {
-            "file": "~/video/lol_1920x1080.yuv",
+            "class": "games",
+            "bit_depth": 8,
+            "file": "lol_1920x1080.yuv",
             "dim_w": 1920,
             "dim_h": 1080,
             "fps": 25,
-            "bitrates": [1000, 1500, 2000, 3000]
+            "bitrates": [2000, 4000, 6000, 8000]
         }
     ]
 }
