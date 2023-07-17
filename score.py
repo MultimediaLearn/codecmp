@@ -14,8 +14,8 @@ from util.vutil import *
 from util.score_calc import scores_calc
 from arguments import *
 
-def get_csv_name(ref):
-    return "ares_" + ref
+def get_csv_name(ref_class, ref):
+    return "_".join(["ares", ref_class, ref])
 
 def get_main_name(enc_name: str, ref_class: str, ref_name: str, val_str, rc):
     rc_str = str(rc)
@@ -153,8 +153,8 @@ def eval_yuv(conf_encs: json, ref_base: str, yuv: json, resume: bool, wb: Workbo
     yuv["file"] = yuv_file      # updatge file to absolute path
     pinfo(f"process {yuv_file}")
     [_, ref_name, _] = sep_path_segs(yuv_file)
-    csv_file = os.path.join(cache_dir, get_csv_name(ref_name) + ".csv")
-    scores_cache_path = os.path.join(cache_dir, ref_name + "_scores_cache.pkl")
+    csv_file = os.path.join(cache_dir, get_csv_name(ref_class, ref_name) + ".csv")
+    scores_cache_path = os.path.join(cache_dir, ref_class + "_" + ref_name + "_scores_cache.pkl")
 
     if (resume and os.path.isfile(scores_cache_path)):
         # 恢复状态

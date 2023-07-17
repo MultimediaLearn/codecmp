@@ -13,7 +13,7 @@ from util.xlsx_tool import *
 
 def save_refs(res, ws, ws_fig):
     # print(res)
-    head = ["class", "file", "psnr_avg", "psnr_y", "ssim_all", "ssim", "vmaf",
+    head = ["class", "file", "psnr_avg(FF)", "psnr_y(VMAF)", "ssim_all(FF)", "ssim(VMAF)", "vmaf(VMAF)",
             "time_save(u+s)%", "enc_name", "label", "par"]
     if ws.dimensions == "A1:A1":
         print(head)
